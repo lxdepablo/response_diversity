@@ -1,5 +1,5 @@
 # set working directory
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd("/Users/lude8513/r_scripts/response_diversity")
 
 # load libraries
 library(tictoc)
@@ -22,7 +22,7 @@ function_slope_range <- c(0, 10)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
 # how many ecosystems to generate
-n_simulations <- 100
+n_simulations <- 1000
 
 
 # generate data
@@ -106,16 +106,16 @@ gaussian_varied_n50_results <- run_n_sims(n_simulations, n_species = 50, environ
 
 
 # write data to CSV's
-write_csv(p_contribute_n10_results, "../data/sim_data/p_contribute_n10.csv")
-write_csv(p_contribute_n50_results, "../data/sim_data/p_contribute_n50.csv")
+write_csv(p_contribute_n10_results, "sim_data/p_contribute_n10.csv")
+write_csv(p_contribute_n50_results, "sim_data/p_contribute_n50.csv")
 
-write_csv(linear_small_int_results, "../data/sim_data/linear_small_int_results.csv")
-write_csv(linear_large_int_results, "../data/sim_data/linear_large_int_results.csv")
-write_csv(linear_rand_int_results, "../data/sim_data/linear_rand_int_results.csv")
+write_csv(linear_small_int_results, "sim_data/linear_small_int_results.csv")
+write_csv(linear_large_int_results, "sim_data/linear_large_int_results.csv")
+write_csv(linear_rand_int_results, "sim_data/linear_rand_int_results.csv")
 
-write_csv(gaussian_constant_results, "../data/sim_data/gaussian_constant_results.csv")
-write_csv(gaussian_varied_n10_results, "../data/sim_data/gaussian_varied_n10_results.csv")
-write_csv(gaussian_varied_n50_results, "../data/sim_data/gaussian_varied_n50_results.csv")
+write_csv(gaussian_constant_results, "sim_data/gaussian_constant_results.csv")
+write_csv(gaussian_varied_n10_results, "sim_data/gaussian_varied_n10_results.csv")
+write_csv(gaussian_varied_n50_results, "sim_data/gaussian_varied_n50_results.csv")
 
 toc()
 
