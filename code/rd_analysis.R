@@ -210,9 +210,13 @@ p_contribute_plot(p_contribute_n50_stats)
 # Fig 1, abundance vs environment
 abundance_environment_plot(linear_small_int_results)
 abundance_environment_plot(linear_large_int_results)
-abundance_environment_plot(linear_rand_int_results)
-abundance_environment_plot(gaussian_varied_n10_results)
+ae1 <- abundance_environment_plot(linear_rand_int_results) +
+  theme(legend.position = "none")
+ae2 <- abundance_environment_plot(gaussian_varied_n10_results) +
+  labs(y = "")
 abundance_environment_plot(gaussian_varied_n50_results)
+
+plot_grid(ae1, ae2, labels = c("Linear", "Gaussian"), hjust = -2, vjust = 2, label_size = 20)
 
 # Fig 2, function vs abundance
 function_abundance_plot(linear_small_int_results)
@@ -224,9 +228,13 @@ function_abundance_plot(gaussian_varied_n50_results)
 # Fig 3, total function vs environment
 total_function_environment_plot(linear_small_int_results)
 total_function_environment_plot(linear_large_int_results)
-total_function_environment_plot(linear_rand_int_results)
-total_function_environment_plot(gaussian_varied_n10_results)
+tf1 <- total_function_environment_plot(linear_rand_int_results) +
+  theme(legend.position = "none")
+tf2 <- total_function_environment_plot(gaussian_varied_n10_results) +
+  labs(y = "")
 total_function_environment_plot(gaussian_varied_n50_results)
+
+plot_grid(tf1, tf2, labels = c("Linear", "Gaussian"), hjust = -1.7, vjust = 2, label_size = 20, rel_widths = c(3, 4))
 
 # Fig 4, resilience vs mean weighted response diversity
 resilience_w_rd_plot(linear_small_int_stats)
@@ -257,11 +265,15 @@ function_u_rd_plot(gaussian_varied_n10_stats)
 function_u_rd_plot(gaussian_varied_n50_stats)
 
 # Fig ?, resilience vs mean weighted RD vs total function
-rfw1 <- resilience_function_w_rd_plot(linear_small_int_stats)
-rfw2 <- resilience_function_w_rd_plot(linear_large_int_stats)
-rfw3 <- resilience_function_w_rd_plot(linear_rand_int_stats)
+rfw1 <- resilience_function_w_rd_plot(linear_small_int_stats) +
+  labs(x = "")
+rfw2 <- resilience_function_w_rd_plot(linear_large_int_stats) +
+  labs(x = "", y = "")
+rfw3 <- resilience_function_w_rd_plot(linear_rand_int_stats) +
+  labs(y = "")
 rfw4 <- resilience_function_w_rd_plot(gaussian_varied_n10_stats)
-rfw5 <- resilience_function_w_rd_plot(gaussian_varied_n50_stats)
+rfw5 <- resilience_function_w_rd_plot(gaussian_varied_n50_stats) +
+  labs(y = "")
 
 plot_grid(rfw1, rfw2, rfw3, rfw4, rfw5, labels = c("Linear Small Intercept",
                                                    "Linear Large Intercept",
@@ -270,11 +282,21 @@ plot_grid(rfw1, rfw2, rfw3, rfw4, rfw5, labels = c("Linear Small Intercept",
                                                    "Gaussian 50 Species"))
 
 # Fig ?, resilience vs unweighted RD vs total function
-resilience_function_u_rd_plot(linear_small_int_stats)
-resilience_function_u_rd_plot(linear_large_int_stats)
-resilience_function_u_rd_plot(linear_rand_int_stats)
-resilience_function_u_rd_plot(gaussian_varied_n10_stats)
-resilience_function_u_rd_plot(gaussian_varied_n50_stats)
+rfu1 <- resilience_function_u_rd_plot(linear_small_int_stats) +
+  labs(x = "")
+rfu2 <-resilience_function_u_rd_plot(linear_large_int_stats) +
+  labs(x = "", y = "")
+rfu3 <-resilience_function_u_rd_plot(linear_rand_int_stats) +
+  labs(y = "")
+rfu4 <-resilience_function_u_rd_plot(gaussian_varied_n10_stats)
+rfu5 <-resilience_function_u_rd_plot(gaussian_varied_n50_stats) +
+  labs(y = "")
+
+plot_grid(rfu1, rfu2, rfu3, rfu4, rfu5, labels = c("Linear Small Intercept",
+                                                   "Linear Large Intercept",
+                                                   "Linear Random Intercept",
+                                                   "Gaussian 10 Species",
+                                                   "Gaussian 50 Species"))
 
 # make models --------
 ## log(resilience) ~ WRD ----------
