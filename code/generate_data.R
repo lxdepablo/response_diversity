@@ -3,6 +3,7 @@ setwd("/Users/lude8513/r_scripts/response_diversity")
 
 # load libraries
 library(tictoc)
+library(parallel)
 
 # load helper functions
 source("rd_utils.R")
@@ -22,7 +23,10 @@ function_slope_range <- c(0, 10)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
 # how many ecosystems to generate
-n_simulations <- 1000
+n_simulations <- 10
+
+# how many cores for parallelization
+n_cores <- detectCores()
 
 
 # generate data
@@ -43,7 +47,7 @@ gaussian_varied_ranges <- list(function_intercept_range, function_slope_range, c
 p_contribute_ranges <- list(function_intercept_range, function_slope_range, c(0, 50), b_range, c(0, 20))
 
 # generate data for proportion contribute sensitivity analysis
-p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, function(p){
+p_contribute_n10_results <- do.call(rbind, mclapply(proportion_contribute, function(p){
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 10, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
   
@@ -67,9 +71,9 @@ p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, functio
   
   print(paste0("finished sim: p = ", p))
   curr_stats
-}))
+}, mc.cores = n_cores))
 
-p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, function(p){
+p_contribute_n50_results <- do.call(rbind, mclapply(proportion_contribute, function(p){
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 50, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
   
@@ -93,7 +97,7 @@ p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, functio
   
   print(paste0("finished sim: p = ", p))
   curr_stats
-}))
+}, mc.cores = n_cores))
 
 # run simulations for main analyses
 linear_small_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_small_int_ranges, 'linear', p_contribute = 1)
