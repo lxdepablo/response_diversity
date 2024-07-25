@@ -1,5 +1,6 @@
 # set working directory
 setwd("/Users/lude8513/r_scripts/response_diversity")
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # load libraries
 library(tictoc)
