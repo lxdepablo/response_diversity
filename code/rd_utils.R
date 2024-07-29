@@ -58,6 +58,60 @@ generate_abundance_functions <- function(n_species, params_ranges, response_shap
   }
 }
 
+generate_norm_abundance_functions <- function(n_species, params_ranges, response_shape){
+  if(response_shape == "linear") {
+    # pull parameter ranges from vector
+    funct_intercept_range <- params_ranges[[1]]
+    funct_slope_range <- params_ranges[[2]]
+    abund_intercept_range <- params_ranges[[3]]
+    abund_slope_range <- params_ranges[[4]]
+    
+    sd_range <- c()
+    
+    # generate linear abundance functions and linear function functions
+    a_int_mean <- runif(n_species, abund_intercept_range[1], abund_intercept_range[2])
+    a_int_sd <- runif(n_species, sd_range[1], sd_range[2])
+    a_slope_mean <- runif(n_species, abund_slope_range[1], abund_slope_range[2])
+    a_slope_sd <- runif(n_species, sd_range[1], sd_range[2])
+    f_int_mean <- runif(n_species, funct_intercept_range[1], funct_intercept_range[2])
+    f_int_sd <- runif(n_species, sd_range[1], sd_range[2])
+    f_slope_mean <- runif(n_species, funct_slope_range[1], funct_slope_range[2])
+    f_slope_sd <- runif(n_species, sd_range[1], sd_range[2])
+    
+    data.frame(species_ID = 1:n_species,
+               abundance_intercept = rnorm(n_species, a_int_mean, a_int_sd),
+               abundance_slope = rnorm(n_species, a_slope_mean, a_slope_sd),
+               function_intercept = rnorm(n_species, f_int_mean, f_int_sd),
+               function_slope = rnorm(n_species, f_slope_mean, f_slope_sd))
+    
+    abundance_intercept <- rnorm(n_species, abundance_mean, abundance_sd)
+    abundance_slope <- rnorm(n_species, abundance_mean, abundance_sd)
+    function_intercept <- rnorm(n_species, abundance_mean, abundance_sd)
+    function_slope <- rnorm(n_species, abundance_mean, abundance_sd)
+    
+  } else if(response_shape == "gaussian"){
+    # pull parameter ranges from vector
+    funct_intercept_range <- params_ranges[[1]]
+    funct_slope_range <- params_ranges[[2]]
+    a_range <- params_ranges[[3]]
+    b_range <- params_ranges[[4]]
+    c_range <- params_ranges[[5]]
+    
+    # generate gaussian abundance functions and linear function functions
+    do.call(rbind, lapply(1:n_species, function(i){
+      data.frame(species_ID = i,
+                 a = runif(1, a_range[1], a_range[2]),
+                 b = runif(1, b_range[1], b_range[2]),
+                 c = runif(1, c_range[1], c_range[2]),
+                 function_intercept = runif(1, funct_intercept_range[1], funct_intercept_range[2]),
+                 function_slope = runif(1, funct_slope_range[1], funct_slope_range[2]))
+    }))
+  } else {
+    print("Response shape must be either 'linear' or 'gaussian'.")
+    return(NA)
+  }
+}
+
 # Gaussian function to calculate abundance as a function of environment
 # inputs:
 # a: height of the curves peak
