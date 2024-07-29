@@ -11,6 +11,7 @@ if(require(tidyverse)){
   }
 }
 
+n_cores <- detectCores()
 
 # generate random abundance functions
 # inputs:
@@ -125,10 +126,10 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
 
 # function to run n simulations
 run_n_sims <- function(n_sims, n_species, environment_vals, params_ranges, response_shape, p_contribute){
-  do.call(rbind, lapply(1:n_sims, function(n){
+  do.call(rbind, mclapply(1:n_sims, function(n){
     curr_results <- run_one_sim(n_species, environment_vals, params_ranges, response_shape, p_contribute) %>%
       mutate(sim_number = n)
-  }))
+  }, mc.cores = 64))
 }
 
 # function to calculate weighted response diversity

@@ -1,11 +1,13 @@
 # set working directory
 setwd("/Users/lude8513/r_scripts/response_diversity")
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # load libraries
 library(tictoc)
+library(parallel)
 
 # load helper functions
-source("rd_utils.R")
+source("code/rd_utils.R")
 
 tic()
 
@@ -22,7 +24,10 @@ function_slope_range <- c(0, 10)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
 # how many ecosystems to generate
-n_simulations <- 1000
+n_simulations <- 10
+
+# how many cores for parallelization
+n_cores <- detectCores()
 
 
 # generate data
