@@ -28,13 +28,13 @@ generate_abundance_functions <- function(n_species, params_ranges, response_shap
     abund_slope_range <- params_ranges[[4]]
     
     # generate linear abundance functions and linear function functions
-    do.call(rbind, mclapply(1:n_species, function(i){
+    do.call(rbind, lapply(1:n_species, function(i){
       data.frame(species_ID = i,
                  abundance_intercept = runif(1, abund_intercept_range[1], abund_intercept_range[2]),
                  abundance_slope = runif(1, abund_slope_range[1], abund_slope_range[2]),
                  function_intercept = runif(1, funct_intercept_range[1], funct_intercept_range[2]),
                  function_slope = runif(1, funct_slope_range[1], funct_slope_range[2]))
-    }, mc.cores = n_cores))
+    }))
   } else if(response_shape == "gaussian"){
     # pull parameter ranges from vector
     funct_intercept_range <- params_ranges[[1]]
@@ -44,14 +44,14 @@ generate_abundance_functions <- function(n_species, params_ranges, response_shap
     c_range <- params_ranges[[5]]
     
     # generate gaussian abundance functions and linear function functions
-    do.call(rbind, mclapply(1:n_species, function(i){
+    do.call(rbind, lapply(1:n_species, function(i){
       data.frame(species_ID = i,
                  a = runif(1, a_range[1], a_range[2]),
                  b = runif(1, b_range[1], b_range[2]),
                  c = runif(1, c_range[1], c_range[2]),
                  function_intercept = runif(1, funct_intercept_range[1], funct_intercept_range[2]),
                  function_slope = runif(1, funct_slope_range[1], funct_slope_range[2]))
-    }, mc.cores = n_cores))
+    }))
   } else {
     print("Response shape must be either 'linear' or 'gaussian'.")
     return(NA)
@@ -89,9 +89,9 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
            function_slope = ifelse(species_ID <= (p_contribute*n_species), function_slope, 0))
   
   # calculate abundances and functions for a range of environment values
-  model_results <- do.call(rbind, mclapply(environment_vals, function(E){
+  model_results <- do.call(rbind, lapply(environment_vals, function(E){
     # loop over every species in model
-    do.call(rbind, mclapply(1:nrow(models), function(i){
+    do.call(rbind, lapply(1:nrow(models), function(i){
       # calculate abundance for current value of environment
       if(response_shape == 'linear'){
         curr_abundance <- linear_abundance(models$abundance_slope[i], models$abundance_intercept[i], E)
@@ -120,8 +120,8 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
                    abundance = curr_abundance,
                    funct = curr_function)
       }
-    }, mc.cores = n_cores))
-  }, mc.cores = n_cores))
+    }))
+  }))
 }
 
 # function to run n simulations
@@ -129,7 +129,7 @@ run_n_sims <- function(n_sims, n_species, environment_vals, params_ranges, respo
   do.call(rbind, mclapply(1:n_sims, function(n){
     curr_results <- run_one_sim(n_species, environment_vals, params_ranges, response_shape, p_contribute) %>%
       mutate(sim_number = n)
-  }, mc.cores = n_cores))
+  }, mc.cores = 64))
 }
 
 # function to calculate weighted response diversity
