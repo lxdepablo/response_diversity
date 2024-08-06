@@ -1,6 +1,7 @@
 # set working directory
 setwd("/Users/lude8513/r_scripts/response_diversity")
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd("../")
 
 # load libraries
 library(tictoc)
@@ -21,6 +22,8 @@ b_range <- c(0, 100)
 # function function
 function_intercept_range <- c(0, 0)
 function_slope_range <- c(0, 10)
+# standard deviation range to sample from
+sd_range <- c(0.1, 2)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
 # how many ecosystems to generate
@@ -38,9 +41,9 @@ n_cores <- detectCores()
 #  gaussian - list(function_intercept_range, function_slope_range, a_range, b_range, c_range)
 
 # define parameter ranges for different scenarios
-linear_small_int_ranges <- list(function_intercept_range, function_slope_range, c(5, 5), abundance_slope_range)
-linear_large_int_ranges <- list(function_intercept_range, function_slope_range, c(50, 50), abundance_slope_range)
-linear_rand_int_ranges <- list(function_intercept_range, function_slope_range, c(0, 100), abundance_slope_range)
+linear_small_int_ranges <- list(function_intercept_range, function_slope_range, c(5, 5), abundance_slope_range, sd_range)
+linear_large_int_ranges <- list(function_intercept_range, function_slope_range, c(50, 50), abundance_slope_range, sd_range)
+linear_rand_int_ranges <- list(function_intercept_range, function_slope_range, c(0, 100), abundance_slope_range, sd_range)
 
 gaussian_constant_ranges <- list(function_intercept_range, function_slope_range, c(30, 30), b_range, c(10, 10))
 gaussian_varied_ranges <- list(function_intercept_range, function_slope_range, c(0, 50), b_range, c(0, 20))

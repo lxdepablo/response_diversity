@@ -65,19 +65,25 @@ generate_norm_abundance_functions <- function(n_species, params_ranges, response
     funct_slope_range <- params_ranges[[2]]
     abund_intercept_range <- params_ranges[[3]]
     abund_slope_range <- params_ranges[[4]]
+    sd_range <- params_ranges[[5]]
     
-    sd_range <- c()
+    # generate distributions to sample from for current community
+    a_int_mean <- runif(1, abund_intercept_range[1], abund_intercept_range[2])
+    a_int_sd <- runif(1, sd_range[1], sd_range[2])
+    a_slope_mean <- runif(1, abund_slope_range[1], abund_slope_range[2])
+    a_slope_sd <- runif(1, sd_range[1], sd_range[2])
+    f_int_mean <- runif(1, funct_intercept_range[1], funct_intercept_range[2])
+    f_int_sd <- runif(1, sd_range[1], sd_range[2])
+    f_slope_mean <- runif(1, funct_slope_range[1], funct_slope_range[2])
+    f_slope_sd <- runif(1, sd_range[1], sd_range[2])
     
-    # generate linear abundance functions and linear function functions
-    a_int_mean <- runif(n_species, abund_intercept_range[1], abund_intercept_range[2])
-    a_int_sd <- runif(n_species, sd_range[1], sd_range[2])
-    a_slope_mean <- runif(n_species, abund_slope_range[1], abund_slope_range[2])
-    a_slope_sd <- runif(n_species, sd_range[1], sd_range[2])
-    f_int_mean <- runif(n_species, funct_intercept_range[1], funct_intercept_range[2])
-    f_int_sd <- runif(n_species, sd_range[1], sd_range[2])
-    f_slope_mean <- runif(n_species, funct_slope_range[1], funct_slope_range[2])
-    f_slope_sd <- runif(n_species, sd_range[1], sd_range[2])
+    # multiply SD's by means
+    a_int_sd <- a_int_sd * a_int_mean
+    a_slope_sd <- a_slope_sd * a_slope_mean
+    f_int_sd <- f_int_sd * f_int_mean
+    f_slope_sd <- f_slope_sd * f_slope_mean
     
+    # generate abundance and function functions for each species by sampling from normal distributions
     data.frame(species_ID = 1:n_species,
                abundance_intercept = rnorm(n_species, a_int_mean, a_int_sd),
                abundance_slope = rnorm(n_species, a_slope_mean, a_slope_sd),
@@ -96,6 +102,7 @@ generate_norm_abundance_functions <- function(n_species, params_ranges, response
     a_range <- params_ranges[[3]]
     b_range <- params_ranges[[4]]
     c_range <- params_ranges[[5]]
+    sd_range <- params_ranges[[6]]
     
     # generate gaussian abundance functions and linear function functions
     do.call(rbind, lapply(1:n_species, function(i){
