@@ -11,7 +11,7 @@ if(require(tidyverse)){
   }
 }
 
-num_cores <- 1
+num_cores <- 64
 
 # generate random abundance functions
 # inputs:
@@ -107,11 +107,14 @@ generate_abundance_functions <- function(n_species, params_ranges, response_shap
     
     # generate gaussian abundance functions and linear function functions
     data.frame(species_ID = 1:n_species,
-               a = rnorm(n_species, a_mean, a_sd),
-               b = rnorm(n_species, b_mean, b_sd),
-               c = rnorm(n_species, c_mean, c_sd),
+               a = rtruncnorm(n_species, a = 0, b = Inf, a_mean, a_sd),
+               b = rtruncnorm(n_species, a = 0, b = Inf, b_mean, b_sd),
+               c = rtruncnorm(n_species, a = 0, b = Inf, c_mean, c_sd),
                function_intercept = rnorm(n_species, f_int_mean, f_int_sd),
                function_slope = rnorm(n_species, f_slope_mean, f_slope_sd))
+    
+    # make sure a, b, and c are positive
+    
   } else {
     print("Response shape must be either 'linear' or 'gaussian'.")
     return(NA)
