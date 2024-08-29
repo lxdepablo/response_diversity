@@ -27,7 +27,7 @@ sd_range <- c(0.1, 30)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
 # how many ecosystems to generate
-n_simulations <- 10
+n_simulations <- 1000
 
 
 # generate data
@@ -40,7 +40,7 @@ n_simulations <- 10
 # define parameter ranges for different scenarios
 linear_small_int_ranges <- list(function_intercept_range, function_slope_range, c(5, 5), abundance_slope_range, sd_range)
 linear_large_int_ranges <- list(function_intercept_range, function_slope_range, c(50, 50), abundance_slope_range, sd_range)
-linear_rand_int_ranges <- list(function_intercept_range, function_slope_range, c(0, 100), abundance_slope_range, sd_range)
+linear_rand_int_ranges <- list(function_intercept_range, function_slope_range, c(-100, 100), abundance_slope_range, sd_range)
 
 gaussian_constant_ranges <- list(function_intercept_range, function_slope_range, c(30, 30), b_range, c(10, 10), sd_range)
 gaussian_varied_ranges <- list(function_intercept_range, function_slope_range, c(0, 50), b_range, c(0, 20), sd_range)
