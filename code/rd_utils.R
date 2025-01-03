@@ -202,13 +202,13 @@ weighted_rd <- function(df, response_shape){
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), slope = median(abundance_slope)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance))
+      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance)/mean(abs(slope)))
   } else if(response_shape == 'gaussian'){
     rd <- df %>%
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance))
+      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance)/mean(b))
   } else {
     print("response shape must be either 'linear' or 'gaussian'.")
     return(NULL)
@@ -241,8 +241,8 @@ resilience <- function(df){
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
-    summarize(resilience = 1/var(total_function),
-              total_function = sum(total_function))
+    summarize(resilience = 1/(var(total_function)/mean(total_function)),
+              total_function = mean(total_function))
 }
 
 calc_stats <- function(df, response_shape){
@@ -375,13 +375,13 @@ resilience_function_w_rd_plot <- function(df){
     geom_point(size=3, alpha=0.8) +
     geom_smooth(method = "lm") +
     scale_color_viridis_c() +
-    labs(x = "Weighted Response Diversity", y = "log(Resilience)", col = "Total Function") +
+    labs(x = "Response Diversity", y = "log(Stability)", col = "Ecosystem Function") +
     theme_bw() +
     theme(panel.grid = element_blank(),
-          axis.text = element_text(size = 20),
+          axis.text = element_text(size = 15),
           axis.title = element_text(size = 25),
-          legend.text = element_text(size = 20),
-          legend.title = element_text(size = 25))
+          legend.text = element_text(size = 10),
+          legend.title = element_text(size = 15))
 }
 
 resilience_function_u_rd_plot <- function(df){
