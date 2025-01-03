@@ -22,7 +22,7 @@ b_range <- c(0, 100)
 # function function
 function_intercept_range <- c(0, 0)
 function_slope_range <- c(0, 10)
-# standard deviation range to sample from
+# standard deviation range to sam ple from
 sd_range <- c(0.1, 30)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
