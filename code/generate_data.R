@@ -1,5 +1,5 @@
 # set working directory
-setwd("/Users/lude8513/r_scripts/response_diversity")
+setwd("/projects/lude8513/response_diversity")
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #setwd("../")
 
@@ -39,13 +39,18 @@ n_simulations <- 1000
 
 # define parameter ranges for different scenarios
 linear_small_int_ranges <- list(function_intercept_range, function_slope_range, c(5, 5), abundance_slope_range, sd_range)
-linear_large_int_ranges <- list(function_intercept_range, function_slope_range, c(50, 50), abundance_slope_range, sd_range)
+linear_mid_int_ranges <- list(function_intercept_range, function_slope_range, c(50, 50), abundance_slope_range, sd_range)
+linear_large_int_ranges <- list(function_intercept_range, function_slope_range, c(500, 500), abundance_slope_range, sd_range)
 linear_rand_int_ranges <- list(function_intercept_range, function_slope_range, c(-100, 100), abundance_slope_range, sd_range)
 
 gaussian_constant_ranges <- list(function_intercept_range, function_slope_range, c(30, 30), b_range, c(10, 10), sd_range)
 gaussian_varied_ranges <- list(function_intercept_range, function_slope_range, c(0, 50), b_range, c(0, 20), sd_range)
 
 p_contribute_ranges <- list(function_intercept_range, function_slope_range, c(0, 50), b_range, c(0, 20), sd_range)
+
+crossing_large_ranges <- list(function_intercept_range, function_slope_range, c(0, 100), c(-1, -1), sd_range)
+crossing_small_ranges <- list(function_intercept_range, function_slope_range, c(0, 100), c(-0.1, -0.1), sd_range)
+crossing_rand_ranges <- list(function_intercept_range, function_slope_range, c(-100, 100), c(-1, 1), sd_range)
 
 # generate data for proportion contribute sensitivity analysis
 p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, function(p){
@@ -102,13 +107,18 @@ p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, functio
 
 # run simulations for main analyses
 linear_small_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_small_int_ranges, 'linear', p_contribute = 1)
-linear_large_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_large_int_ranges, 'linear', p_contribute = 1)
+linear_mid_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_mid_int_ranges, 'linear', p_contribute = 1)
+linear_large_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_mid_int_ranges, 'linear', p_contribute = 1)
 linear_rand_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_rand_int_ranges, 'linear', p_contribute = 1)
+linear_rand_int_n50_results <- run_n_sims(n_simulations, n_species = 50, environment_vals, linear_rand_int_ranges, 'linear', p_contribute = 1)
 
 gaussian_constant_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, gaussian_constant_ranges, 'gaussian', p_contribute = 1)
 gaussian_varied_n10_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, gaussian_varied_ranges, 'gaussian', p_contribute = 1)
 gaussian_varied_n50_results <- run_n_sims(n_simulations, n_species = 50, environment_vals, gaussian_varied_ranges, 'gaussian', p_contribute = 1)
 
+crossing_large_slope <- run_n_sims(n_simulations, n_species = 10, environment_vals, crossing_large_ranges, 'linear', p_contribute = 1, perfectly_crossing = TRUE)
+crossing_small_slope <- run_n_sims(n_simulations, n_species = 10, environment_vals, crossing_small_ranges, 'linear', p_contribute = 1, perfectly_crossing = TRUE)
+crossing_rand_slope <- run_n_sims(n_simulations, n_species = 10, environment_vals, crossing_rand_ranges, 'linear', p_contribute = 1, perfectly_crossing = TRUE)
 
 # write data to CSV's
 write_csv(p_contribute_n10_results, "sim_data/p_contribute_n10.csv")
@@ -121,6 +131,10 @@ write_csv(linear_rand_int_results, "sim_data/linear_rand_int_results.csv")
 write_csv(gaussian_constant_results, "sim_data/gaussian_constant_results.csv")
 write_csv(gaussian_varied_n10_results, "sim_data/gaussian_varied_n10_results.csv")
 write_csv(gaussian_varied_n50_results, "sim_data/gaussian_varied_n50_results.csv")
+
+write_csv(crossing_large_slope, "sim_data/crossing_large_slope_results.csv")
+write_csv(crossing_small_slope, "sim_data/crossing_small_slope_results.csv")
+write_csv(crossing_rand_slope, "sim_data/crossing_rand_slope_results.csv")
 
 toc()
 
