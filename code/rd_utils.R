@@ -19,44 +19,7 @@ num_cores <- 64
 # response_shape: shape of abundance function. either 'linear' or 'gaussian'
 # params_ranges: vector containing ranges for abundance and function parameters.
 #  c(function_intercept, function_slope, linear/gaussian parameters)
-# generate_abundance_functions <- function(n_species, params_ranges, response_shape){
-#   if(response_shape == "linear") {
-#     # pull parameter ranges from vector
-#     funct_intercept_range <- params_ranges[[1]]
-#     funct_slope_range <- params_ranges[[2]]
-#     abund_intercept_range <- params_ranges[[3]]
-#     abund_slope_range <- params_ranges[[4]]
-#     
-#     # generate linear abundance functions and linear function functions
-#     do.call(rbind, lapply(1:n_species, function(i){
-#       data.frame(species_ID = i,
-#                  abundance_intercept = runif(1, abund_intercept_range[1], abund_intercept_range[2]),
-#                  abundance_slope = runif(1, abund_slope_range[1], abund_slope_range[2]),
-#                  function_intercept = runif(1, funct_intercept_range[1], funct_intercept_range[2]),
-#                  function_slope = runif(1, funct_slope_range[1], funct_slope_range[2]))
-#     }))
-#   } else if(response_shape == "gaussian"){
-#     # pull parameter ranges from vector
-#     funct_intercept_range <- params_ranges[[1]]
-#     funct_slope_range <- params_ranges[[2]]
-#     a_range <- params_ranges[[3]]
-#     b_range <- params_ranges[[4]]
-#     c_range <- params_ranges[[5]]
-#     
-#     # generate gaussian abundance functions and linear function functions
-#     do.call(rbind, lapply(1:n_species, function(i){
-#       data.frame(species_ID = i,
-#                  a = runif(1, a_range[1], a_range[2]),
-#                  b = runif(1, b_range[1], b_range[2]),
-#                  c = runif(1, c_range[1], c_range[2]),
-#                  function_intercept = runif(1, funct_intercept_range[1], funct_intercept_range[2]),
-#                  function_slope = runif(1, funct_slope_range[1], funct_slope_range[2]))
-#     }))
-#   } else {
-#     print("Response shape must be either 'linear' or 'gaussian'.")
-#     return(NA)
-#   }
-# }
+# response_shape: "linear" or "gaussian"
 
 generate_abundance_functions <- function(n_species, params_ranges, response_shape){
   if(response_shape == "linear") {
@@ -143,13 +106,64 @@ linear_function <- function(slope, intercept, A){
   ((slope * A) + intercept)
 }
 
-# function to run one simulation using linear abundance functions (one set of random models)
-run_one_sim <- function(n_species, environment_vals, params_ranges, response_shape, p_contribute){
-  # generate a random set of models
-  models <- generate_abundance_functions(n_species, params_ranges, response_shape) %>%
-    # decide which species contribute to function
-    mutate(function_intercept = ifelse(species_ID <= (p_contribute*n_species), function_intercept, 0),
-           function_slope = ifelse(species_ID <= (p_contribute*n_species), function_slope, 0))
+# function to run one simulation (one set of random models)
+# inputs:
+# n_species: number of unique species in the ecosystem
+# environment_vals: vector of values for environmental gradient/axis
+# params_ranges: list of ranges for each species parameter (used in generating abundance functions)
+# response_shape: "linear" or "gaussian"
+# p_contribute: proportion of species contributing to ecosystem function
+#     n_species*p_contribute must be a whole number
+# perfectly_crossing: TRUE or FALSE, determines whether abundance functions should be perfectly crossing/mirrored
+#     only works if n_species*p_contribute is even and response shape is linear
+run_one_sim <- function(n_species, environment_vals, params_ranges, response_shape, p_contribute = 1, perfectly_crossing = FALSE){
+  # check if n_species*p_contribute is a whole number, if not throw error
+  if((n_species*p_contribute)%%1 > 0){
+    stop("n_species*p_contribute must be a whole number.")
+  }
+  
+  # generate abundance functions for each species
+  if(perfectly_crossing == FALSE){
+    # generate a random set of models
+    models <- generate_abundance_functions(n_species, params_ranges, response_shape) %>%
+      # decide which species contribute to function
+      mutate(function_intercept = ifelse(species_ID <= (p_contribute*n_species), function_intercept, 0),
+             function_slope = ifelse(species_ID <= (p_contribute*n_species), function_slope, 0))
+    
+  } else if(perfectly_crossing == TRUE & (n_species*p_contribute)%%2 > 0) {
+    stop("n_species*p_contribute must be even to generate perfectly crossing abundance functions.")
+  } else if(perfectly_crossing == TRUE & response_shape == "gaussian"){
+    stop("response shape must be 'linear' to generate perfectly crossing abundance functions.")
+  } else {
+    # generate a random set of models
+    models <- generate_abundance_functions(n_species, params_ranges, response_shape) %>%
+      # decide which species contribute to function
+      # use half of desired species (n_species*p_contribute)/2
+      mutate(function_intercept = ifelse(species_ID <= (p_contribute*n_species)/2, function_intercept, 0),
+             function_slope = ifelse(species_ID <= (p_contribute*n_species)/2, function_slope, 0),
+             abundance_intercept = ifelse(species_ID <= (p_contribute*n_species)/2, abundance_intercept, 0),
+             abundance_slope = ifelse(species_ID <= (p_contribute*n_species)/2, abundance_slope, 0))
+    
+    # mirror every species about mean environment
+    models <- bind_rows(lapply(1:nrow(models), function(n){
+      # find max environment value
+      mean_e <- mean(environment_vals)
+      
+      # if model exists, mirror it
+      curr_model <- models[n,]
+      if(curr_model$abundance_intercept != 0 & curr_model$abundance_slope != 0){
+        new_model <- data.frame(species_ID = curr_model$species_ID + (p_contribute*n_species)/2,
+                                abundance_intercept = (2 * curr_model$abundance_slope * mean_e) + curr_model$abundance_intercept,
+                                abundance_slope = -1 * curr_model$abundance_slope,
+                                function_intercept = curr_model$function_intercept,
+                                function_slope = curr_model$function_slope)
+      } else {
+        new_model <- curr_model
+      }
+      return(new_model)
+    }))
+  }
+  
   
   # calculate abundances and functions for a range of environment values
   model_results <- do.call(rbind, lapply(environment_vals, function(E){
@@ -188,12 +202,14 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
 }
 
 # function to run n simulations
-run_n_sims <- function(n_sims, n_species, environment_vals, params_ranges, response_shape, p_contribute){
+run_n_sims <- function(n_sims, n_species, environment_vals, params_ranges, response_shape, p_contribute, perfectly_crossing = FALSE){
   do.call(rbind, mclapply(1:n_sims, function(n){
-    curr_results <- run_one_sim(n_species, environment_vals, params_ranges, response_shape, p_contribute) %>%
+    curr_results <- run_one_sim(n_species, environment_vals, params_ranges, response_shape, p_contribute, perfectly_crossing) %>%
       mutate(sim_number = n)
   }, mc.cores = num_cores))
 }
+
+
 
 # function to calculate weighted response diversity
 weighted_rd <- function(df, response_shape){
