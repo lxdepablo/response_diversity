@@ -4,13 +4,10 @@ setwd("/projects/lude8513/response_diversity")
 #setwd("../")
 
 # load libraries
-library(tictoc)
 library(parallel)
 
 # load helper functions
 source("code/rd_utils.R")
-
-tic()
 
 # define default parameter ranges
 # what proportion of species contribute to function
@@ -135,6 +132,4 @@ write_csv(gaussian_varied_n50_results, "sim_data/gaussian_varied_n50_results.csv
 write_csv(crossing_large_slope, "sim_data/crossing_large_slope_results.csv")
 write_csv(crossing_small_slope, "sim_data/crossing_small_slope_results.csv")
 write_csv(crossing_rand_slope, "sim_data/crossing_rand_slope_results.csv")
-
-toc()
 
