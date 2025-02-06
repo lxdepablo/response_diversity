@@ -11,7 +11,7 @@ if(require(tidyverse)){
   }
 }
 
-num_cores <- 8
+num_cores <- 64
 
 # generate random abundance functions
 # inputs:
@@ -118,7 +118,9 @@ linear_function <- function(slope, intercept, A){
 #     only works if n_species*p_contribute is even and response shape is linear
 run_one_sim <- function(n_species, environment_vals, params_ranges, response_shape, p_contribute = 1, perfectly_crossing = FALSE){
   # check if n_species*p_contribute is a whole number, if not throw error
-  if((n_species*p_contribute)%%1 > 0){
+  if(round((n_species*p_contribute)%%1, 3) > 0){
+    #print(n_species*p_contribute)
+    print((n_species*p_contribute)%%1)
     stop("n_species*p_contribute must be a whole number.")
   }
   
@@ -130,7 +132,7 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
       mutate(function_intercept = ifelse(species_ID <= (p_contribute*n_species), function_intercept, 0),
              function_slope = ifelse(species_ID <= (p_contribute*n_species), function_slope, 0))
     
-  } else if(perfectly_crossing == TRUE & (n_species*p_contribute)%%2 > 0) {
+  } else if(perfectly_crossing == TRUE & round((n_species*p_contribute)%%2, 3) > 0) {
     stop("n_species*p_contribute must be even to generate perfectly crossing abundance functions.")
   } else if(perfectly_crossing == TRUE & response_shape == "gaussian"){
     stop("response shape must be 'linear' to generate perfectly crossing abundance functions.")
@@ -160,7 +162,6 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
       } else {
         new_model <- curr_model
       }
-      return(new_model)
     }))
   }
   
@@ -199,6 +200,7 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
       }
     }))
   }))
+  return(model_results)
 }
 
 # function to run n simulations

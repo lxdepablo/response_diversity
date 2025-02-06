@@ -54,12 +54,19 @@ p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, functio
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 10, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
   
+  #print(paste0(typeof(curr_p), " curr type"))
+  #print(head(curr_p))
+  
+  print("reached resilience calc")
+  
   # calc resilience
   resilience <- curr_p %>%
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
     summarize(resilience = 1/var(total_function))
+  
+  print("post resilience calc")
   
   # calc weighted response diversity
   mean_weighted_response_diversity <- curr_p %>%
@@ -118,18 +125,20 @@ crossing_small_slope <- run_n_sims(n_simulations, n_species = 10, environment_va
 crossing_rand_slope <- run_n_sims(n_simulations, n_species = 10, environment_vals, crossing_rand_ranges, 'linear', p_contribute = 1, perfectly_crossing = TRUE)
 
 # write data to CSV's
-write_csv(p_contribute_n10_results, "sim_data/p_contribute_n10.csv")
-write_csv(p_contribute_n50_results, "sim_data/p_contribute_n50.csv")
+write_csv(p_contribute_n10_results, "data/sim_data/p_contribute_n10.csv")
+write_csv(p_contribute_n50_results, "data/sim_data/p_contribute_n50.csv")
 
-write_csv(linear_small_int_results, "sim_data/linear_small_int_results.csv")
-write_csv(linear_large_int_results, "sim_data/linear_large_int_results.csv")
-write_csv(linear_rand_int_results, "sim_data/linear_rand_int_results.csv")
+write_csv(linear_small_int_results, "data/sim_data/linear_small_int_results.csv")
+write_csv(linear_mid_int_results, "data/sim_data/linear_mid_int_results.csv")
+write_csv(linear_large_int_results, "data/sim_data/linear_large_int_results.csv")
+write_csv(linear_rand_int_results, "data/sim_data/linear_rand_int_results.csv")
+write_csv(linear_rand_int_n50_results, "data/sim_data/linear_rand_int_n50_results.csv")
 
-write_csv(gaussian_constant_results, "sim_data/gaussian_constant_results.csv")
-write_csv(gaussian_varied_n10_results, "sim_data/gaussian_varied_n10_results.csv")
-write_csv(gaussian_varied_n50_results, "sim_data/gaussian_varied_n50_results.csv")
+write_csv(gaussian_constant_results, "data/sim_data/gaussian_constant_results.csv")
+write_csv(gaussian_varied_n10_results, "data/sim_data/gaussian_varied_n10_results.csv")
+write_csv(gaussian_varied_n50_results, "data/sim_data/gaussian_varied_n50_results.csv")
 
-write_csv(crossing_large_slope, "sim_data/crossing_large_slope_results.csv")
-write_csv(crossing_small_slope, "sim_data/crossing_small_slope_results.csv")
-write_csv(crossing_rand_slope, "sim_data/crossing_rand_slope_results.csv")
+write_csv(crossing_large_slope, "data/sim_data/crossing_large_slope_results.csv")
+write_csv(crossing_small_slope, "data/sim_data/crossing_small_slope_results.csv")
+write_csv(crossing_rand_slope, "data/sim_data/crossing_rand_slope_results.csv")
 
