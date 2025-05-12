@@ -12,19 +12,19 @@ library(parallel)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # get some helper functions
-source("ci_utils.R")
+source("cc_utils.R")
 
 # read in data
-climate_raw <- read_csv("climate.csv") %>%
+climate_raw <- read_csv("../data/cedar_creek/climate.csv") %>%
   clean_names()
-biomass_raw <- read_csv("main_biomass.csv") %>%
+biomass_raw <- read_csv("../data/cedar_creek/main_biomass.csv") %>%
   clean_names()
 # soil trait data
-phosphorous_raw <- read_tsv("soil_phosphorous.txt") %>%
+phosphorous_raw <- read_tsv("../data/cedar_creek/soil_phosphorous.txt") %>%
   clean_names()
-nitrate_ammonium_raw <- read_tsv("soil_nitrate_ammonium.txt") %>%
+nitrate_ammonium_raw <- read_tsv("../data/cedar_creek/soil_nitrate_ammonium.txt") %>%
   clean_names()
-nitrogen_raw <- read_tsv("soil_nitrogen.txt") %>%
+nitrogen_raw <- read_tsv("../data/cedar_creek/soil_nitrogen.txt") %>%
   clean_names
 
 # wrangle soil trait data
