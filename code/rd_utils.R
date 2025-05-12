@@ -20,8 +20,9 @@ num_cores <- 64
 # params_ranges: vector containing ranges for abundance and function parameters.
 #  c(function_intercept, function_slope, linear/gaussian parameters)
 # response_shape: "linear" or "gaussian"
+# e_max: maximum value for environment
 
-generate_abundance_functions <- function(n_species, params_ranges, response_shape){
+generate_abundance_functions <- function(n_species, params_ranges, response_shape, e_max){
   if(response_shape == "linear") {
     # pull parameter ranges from vector
     funct_intercept_range <- params_ranges[[1]]
@@ -41,11 +42,45 @@ generate_abundance_functions <- function(n_species, params_ranges, response_shap
     f_slope_sd <- runif(1, sd_range[1], sd_range[2])
     
     # generate abundance and function functions for each species by sampling from normal distributions
-    data.frame(species_ID = 1:n_species,
-               abundance_intercept = rnorm(n_species, a_int_mean, a_int_sd),
-               abundance_slope = rnorm(n_species, a_slope_mean, a_slope_sd),
-               function_intercept = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_int_mean, f_int_sd),
-               function_slope = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_slope_mean, f_slope_sd))
+    all_species <- data.frame(species_ID = 1:n_species,
+               abundance_intercept = rnorm(n_species, a_int_mean),
+               abundance_slope = rnorm(n_species, a_slope_mean),
+               function_intercept = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_int_mean),
+               function_slope = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_slope_mean))
+    
+    # check if any species abundances are fully negative, and if so resample them
+    all_species_resampled <- bind_rows(lapply(1:n_species, function(i){
+      # filter to get current species
+      curr_species <- filter(all_species, species_ID == i)
+      
+      while(TRUE){
+        # if intercept > 0, species must have positive values
+        if(curr_species$abundance_intercept > 0){
+          return(curr_species)
+        # check if species is ever positive
+        # if intercept and slope both < 0, species will never be positive
+        } else if(curr_species$abundance_slope < 0){
+          # resample
+          curr_species <- data.frame(species_ID = curr_species$species_ID,
+                                     abundance_intercept = rnorm(1, a_int_mean),
+                                     abundance_slope = rnorm(1, a_slope_mean),
+                                     function_intercept = truncnorm::rtruncnorm(1, a = 0, b = Inf, f_int_mean),
+                                     function_slope = truncnorm::rtruncnorm(1, a = 0, b = Inf, f_slope_mean))
+        # check if highest value of abundance is positive
+        } else if(linear_abundance(curr_species$abundance_slope, curr_species$abundance_intercept, e_max) > 0){
+          return(curr_species)
+        } else {
+          # species must be bad
+          # resample
+          curr_species <- data.frame(species_ID = curr_species$species_ID,
+                                     abundance_intercept = rnorm(1, a_int_mean),
+                                     abundance_slope = rnorm(1, a_slope_mean),
+                                     function_intercept = truncnorm::rtruncnorm(1, a = 0, b = Inf, f_int_mean),
+                                     function_slope = truncnorm::rtruncnorm(1, a = 0, b = Inf, f_slope_mean))
+        }
+      }
+    }))
+    return(all_species_resampled)
     
   } else if(response_shape == "gaussian"){
     # pull parameter ranges from vector
@@ -73,8 +108,8 @@ generate_abundance_functions <- function(n_species, params_ranges, response_shap
                a = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, a_mean, a_sd),
                b = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, b_mean, b_sd),
                c = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, c_mean, c_sd),
-               function_intercept = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_int_mean, f_int_sd),
-               function_slope = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_slope_mean, f_slope_sd))
+               function_intercept = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_int_mean),
+               function_slope = truncnorm::rtruncnorm(n_species, a = 0, b = Inf, f_slope_mean))
     
     # make sure a, b, and c are positive
     
@@ -117,6 +152,9 @@ linear_function <- function(slope, intercept, A){
 # perfectly_crossing: TRUE or FALSE, determines whether abundance functions should be perfectly crossing/mirrored
 #     only works if n_species*p_contribute is even and response shape is linear
 run_one_sim <- function(n_species, environment_vals, params_ranges, response_shape, p_contribute = 1, perfectly_crossing = FALSE){
+  # get maximum environment values
+  e_max <- max(environment_vals)
+  
   # check if n_species*p_contribute is a whole number, if not throw error
   if(round((n_species*p_contribute)%%1, 3) > 0){
     #print(n_species*p_contribute)
@@ -127,7 +165,7 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
   # generate abundance functions for each species
   if(perfectly_crossing == FALSE){
     # generate a random set of models
-    models <- generate_abundance_functions(n_species, params_ranges, response_shape) %>%
+    models <- generate_abundance_functions(n_species, params_ranges, response_shape, e_max) %>%
       # decide which species contribute to function
       mutate(function_intercept = ifelse(species_ID <= (p_contribute*n_species), function_intercept, 0),
              function_slope = ifelse(species_ID <= (p_contribute*n_species), function_slope, 0))
@@ -138,7 +176,7 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
     stop("response shape must be 'linear' to generate perfectly crossing abundance functions.")
   } else {
     # generate a random set of models
-    models <- generate_abundance_functions(n_species, params_ranges, response_shape) %>%
+    models <- generate_abundance_functions(n_species, params_ranges, response_shape, e_max) %>%
       # decide which species contribute to function
       # use half of desired species (n_species*p_contribute)/2
       mutate(function_intercept = ifelse(species_ID <= (p_contribute*n_species)/2, function_intercept, 0),
@@ -159,12 +197,13 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
                                 abundance_slope = -1 * curr_model$abundance_slope,
                                 function_intercept = curr_model$function_intercept,
                                 function_slope = curr_model$function_slope)
+        rbind(new_model, curr_model)
       } else {
-        new_model <- curr_model
+        return(NULL)
       }
     }))
   }
-  
+  #print(paste0("models: ", models))
   
   # calculate abundances and functions for a range of environment values
   model_results <- do.call(rbind, lapply(environment_vals, function(E){

@@ -15,7 +15,7 @@ echo "You've requested $SLURM_CPUS_ON_NODE core(s)."
 date
 
 module purge
-module load mambaforge
+module load miniforge
 mamba activate tidyverse_env
 
 Rscript generate_data.R

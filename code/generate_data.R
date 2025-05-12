@@ -19,7 +19,7 @@ b_range <- c(0, 100)
 # function function
 function_intercept_range <- c(0, 0)
 function_slope_range <- c(0, 10)
-# standard deviation range to sam ple from
+# standard deviation range to sample from
 sd_range <- c(0.1, 30)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
@@ -53,32 +53,32 @@ crossing_rand_ranges <- list(function_intercept_range, function_slope_range, c(-
 p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, function(p){
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 10, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
-  
+
   #print(paste0(typeof(curr_p), " curr type"))
   #print(head(curr_p))
-  
+
   print("reached resilience calc")
-  
+
   # calc resilience
   resilience <- curr_p %>%
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
     summarize(resilience = 1/var(total_function))
-  
+
   print("post resilience calc")
-  
+
   # calc weighted response diversity
   mean_weighted_response_diversity <- curr_p %>%
     group_by(sim_number, species_ID) %>%
     summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
     group_by(sim_number) %>%
     summarize(mean_weighted_response_diversity = Hmisc::wtd.var(b, mean_abundance))
-  
+
   curr_stats <- resilience %>%
     left_join(mean_weighted_response_diversity, by = "sim_number") %>%
     mutate(p = p)
-  
+
   print(paste0("finished sim: p = ", p))
   curr_stats
 }))
@@ -86,25 +86,25 @@ p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, functio
 p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, function(p){
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 50, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
-  
+
   # calc resilience
   resilience <- curr_p %>%
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
     summarize(resilience = 1/var(total_function))
-  
+
   # calc weighted response diversity
   mean_weighted_response_diversity <- curr_p %>%
     group_by(sim_number, species_ID) %>%
     summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
     group_by(sim_number) %>%
     summarize(mean_weighted_response_diversity = Hmisc::wtd.var(b, mean_abundance))
-  
+
   curr_stats <- resilience %>%
     left_join(mean_weighted_response_diversity, by = "sim_number") %>%
     mutate(p = p)
-  
+
   print(paste0("finished sim: p = ", p))
   curr_stats
 }))
@@ -112,7 +112,7 @@ p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, functio
 # run simulations for main analyses
 linear_small_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_small_int_ranges, 'linear', p_contribute = 1)
 linear_mid_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_mid_int_ranges, 'linear', p_contribute = 1)
-linear_large_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_mid_int_ranges, 'linear', p_contribute = 1)
+linear_large_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_large_int_ranges, 'linear', p_contribute = 1)
 linear_rand_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_rand_int_ranges, 'linear', p_contribute = 1)
 linear_rand_int_n50_results <- run_n_sims(n_simulations, n_species = 50, environment_vals, linear_rand_int_ranges, 'linear', p_contribute = 1)
 
