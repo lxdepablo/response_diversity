@@ -4,13 +4,10 @@ setwd("/projects/lude8513/response_diversity")
 #setwd("../")
 
 # load libraries
-library(tictoc)
 library(parallel)
 
 # load helper functions
 source("code/rd_utils.R")
-
-tic()
 
 # define default parameter ranges
 # what proportion of species contribute to function
@@ -22,7 +19,7 @@ b_range <- c(0, 100)
 # function function
 function_intercept_range <- c(0, 0)
 function_slope_range <- c(0, 10)
-# standard deviation range to sam ple from
+# standard deviation range to sample from
 sd_range <- c(0.1, 30)
 # environmental gradient vector
 environment_vals <- seq(0, 100, 1)
@@ -56,25 +53,32 @@ crossing_rand_ranges <- list(function_intercept_range, function_slope_range, c(-
 p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, function(p){
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 10, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
-  
+
+  #print(paste0(typeof(curr_p), " curr type"))
+  #print(head(curr_p))
+
+  print("reached resilience calc")
+
   # calc resilience
   resilience <- curr_p %>%
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
     summarize(resilience = 1/var(total_function))
-  
+
+  print("post resilience calc")
+
   # calc weighted response diversity
   mean_weighted_response_diversity <- curr_p %>%
     group_by(sim_number, species_ID) %>%
     summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
     group_by(sim_number) %>%
     summarize(mean_weighted_response_diversity = Hmisc::wtd.var(b, mean_abundance))
-  
+
   curr_stats <- resilience %>%
     left_join(mean_weighted_response_diversity, by = "sim_number") %>%
     mutate(p = p)
-  
+
   print(paste0("finished sim: p = ", p))
   curr_stats
 }))
@@ -82,25 +86,25 @@ p_contribute_n10_results <- do.call(rbind, lapply(proportion_contribute, functio
 p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, function(p){
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 50, environment_vals, p_contribute_ranges, response_shape = 'gaussian', p_contribute = p)
-  
+
   # calc resilience
   resilience <- curr_p %>%
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
     summarize(resilience = 1/var(total_function))
-  
+
   # calc weighted response diversity
   mean_weighted_response_diversity <- curr_p %>%
     group_by(sim_number, species_ID) %>%
     summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
     group_by(sim_number) %>%
     summarize(mean_weighted_response_diversity = Hmisc::wtd.var(b, mean_abundance))
-  
+
   curr_stats <- resilience %>%
     left_join(mean_weighted_response_diversity, by = "sim_number") %>%
     mutate(p = p)
-  
+
   print(paste0("finished sim: p = ", p))
   curr_stats
 }))
@@ -108,7 +112,7 @@ p_contribute_n50_results <- do.call(rbind, lapply(proportion_contribute, functio
 # run simulations for main analyses
 linear_small_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_small_int_ranges, 'linear', p_contribute = 1)
 linear_mid_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_mid_int_ranges, 'linear', p_contribute = 1)
-linear_large_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_mid_int_ranges, 'linear', p_contribute = 1)
+linear_large_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_large_int_ranges, 'linear', p_contribute = 1)
 linear_rand_int_results <- run_n_sims(n_simulations, n_species = 10, environment_vals, linear_rand_int_ranges, 'linear', p_contribute = 1)
 linear_rand_int_n50_results <- run_n_sims(n_simulations, n_species = 50, environment_vals, linear_rand_int_ranges, 'linear', p_contribute = 1)
 
@@ -121,20 +125,20 @@ crossing_small_slope <- run_n_sims(n_simulations, n_species = 10, environment_va
 crossing_rand_slope <- run_n_sims(n_simulations, n_species = 10, environment_vals, crossing_rand_ranges, 'linear', p_contribute = 1, perfectly_crossing = TRUE)
 
 # write data to CSV's
-write_csv(p_contribute_n10_results, "sim_data/p_contribute_n10.csv")
-write_csv(p_contribute_n50_results, "sim_data/p_contribute_n50.csv")
+write_csv(p_contribute_n10_results, "data/sim_data/p_contribute_n10.csv")
+write_csv(p_contribute_n50_results, "data/sim_data/p_contribute_n50.csv")
 
-write_csv(linear_small_int_results, "sim_data/linear_small_int_results.csv")
-write_csv(linear_large_int_results, "sim_data/linear_large_int_results.csv")
-write_csv(linear_rand_int_results, "sim_data/linear_rand_int_results.csv")
+write_csv(linear_small_int_results, "data/sim_data/linear_small_int_results.csv")
+write_csv(linear_mid_int_results, "data/sim_data/linear_mid_int_results.csv")
+write_csv(linear_large_int_results, "data/sim_data/linear_large_int_results.csv")
+write_csv(linear_rand_int_results, "data/sim_data/linear_rand_int_results.csv")
+write_csv(linear_rand_int_n50_results, "data/sim_data/linear_rand_int_n50_results.csv")
 
-write_csv(gaussian_constant_results, "sim_data/gaussian_constant_results.csv")
-write_csv(gaussian_varied_n10_results, "sim_data/gaussian_varied_n10_results.csv")
-write_csv(gaussian_varied_n50_results, "sim_data/gaussian_varied_n50_results.csv")
+write_csv(gaussian_constant_results, "data/sim_data/gaussian_constant_results.csv")
+write_csv(gaussian_varied_n10_results, "data/sim_data/gaussian_varied_n10_results.csv")
+write_csv(gaussian_varied_n50_results, "data/sim_data/gaussian_varied_n50_results.csv")
 
-write_csv(crossing_large_slope, "sim_data/crossing_large_slope_results.csv")
-write_csv(crossing_small_slope, "sim_data/crossing_small_slope_results.csv")
-write_csv(crossing_rand_slope, "sim_data/crossing_rand_slope_results.csv")
-
-toc()
+write_csv(crossing_large_slope, "data/sim_data/crossing_large_slope_results.csv")
+write_csv(crossing_small_slope, "data/sim_data/crossing_small_slope_results.csv")
+write_csv(crossing_rand_slope, "data/sim_data/crossing_rand_slope_results.csv")
 
