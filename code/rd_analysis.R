@@ -11,32 +11,50 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source("rd_utils.R")
 
 # load data ------------
-p_contribute_n10_results <- read_csv("../data/big_sim_data/p_contribute_n10.csv")
-p_contribute_n50_results <- read_csv("../data/big_sim_data/p_contribute_n50.csv")
+p_contribute_n10_results <- read_csv("../data/sim_data/p_contribute_n10.csv")
+p_contribute_n50_results <- read_csv("../data/sim_data/p_contribute_n50.csv")
 
-linear_small_int_results <- read_csv("../data/big_sim_data/linear_small_int_results.csv")
-linear_large_int_results <- read_csv("../data/big_sim_data/linear_large_int_results.csv")
-linear_rand_int_results <- read_csv("../data/big_sim_data/linear_rand_int_results.csv")
+linear_small_int_results <- read_csv("../data/sim_data/linear_small_int_results.csv")
+linear_mid_int_results <- read_csv("../data/sim_data/linear_mid_int_results.csv")
+linear_large_int_results <- read_csv("../data/sim_data/linear_large_int_results.csv")
+linear_rand_int_results <- read_csv("../data/sim_data/linear_rand_int_results.csv")
+linear_rand_int_n50_results <- read_csv("../data/sim_data/linear_rand_int_n50_results.csv")
 
-gaussian_constant_results <- read_csv("../data/big_sim_data/gaussian_constant_results.csv")
-gaussian_varied_n10_results <- read_csv("../data/big_sim_data/gaussian_varied_n10_results.csv")
-gaussian_varied_n50_results <- read_csv("../data/big_sim_data/gaussian_varied_n50_results.csv")
+gaussian_constant_results <- read_csv("../data/sim_data/gaussian_constant_results.csv")
+gaussian_varied_n10_results <- read_csv("../data/sim_data/gaussian_varied_n10_results.csv")
+gaussian_varied_n50_results <- read_csv("../data/sim_data/gaussian_varied_n50_results.csv")
+
+crossing_small_slope_results <- read_csv("../data/sim_data/crossing_small_slope_results.csv")
+crossing_large_slope_results <- read_csv("../data/sim_data/crossing_large_slope_results.csv")
+crossing_rand_slope_results <- read_csv("../data/sim_data/crossing_rand_slope_results.csv")
 
 # calculate stats ----------
 
 ## normalize function
 linear_small_int_results <- linear_small_int_results %>%
   mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(linear_small_int_results$funct))))
+linear_mid_int_results <- linear_mid_int_results %>%
+  mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(linear_mid_int_results$funct))))
 linear_large_int_results <- linear_large_int_results %>%
   mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(linear_large_int_results$funct))))
 linear_rand_int_results <- linear_rand_int_results %>%
   mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(linear_rand_int_results$funct))))
+linear_rand_int_n50_results <- linear_rand_int_n50_results %>%
+  mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(linear_rand_int_n50_results$funct))))
+
 gaussian_constant_results <- gaussian_constant_results %>%
   mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(gaussian_constant_results$funct))))
 gaussian_varied_n10_results <- gaussian_varied_n10_results %>%
   mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(gaussian_varied_n10_results$funct))))
 gaussian_varied_n50_results <- gaussian_varied_n50_results %>%
   mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(gaussian_varied_n50_results$funct))))
+
+crossing_small_slope_results <- crossing_small_slope_results %>%
+  mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(crossing_small_slope_results$funct))))
+crossing_large_slope_results <- crossing_large_slope_results %>%
+  mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(crossing_large_slope_results$funct))))
+crossing_rand_slope_results <- crossing_rand_slope_results %>%
+  mutate(funct = rescale(funct, to = c(0, 1), from = c(0, max(crossing_rand_slope_results$funct))))
 
 ## proportion contribute sensitivity analysis ---------
 # get all values for p
@@ -80,11 +98,17 @@ p_contribute_n50_stats <- do.call(rbind, lapply(p_vec, function(curr_p){
 # intercept constant and small
 linear_small_int_stats <- calc_stats(linear_small_int_results, 'linear') %>%
   filter(w_response_diversity != 0)
+# intercept constant and intermediate
+linear_mid_int_stats <- calc_stats(linear_mid_int_results, 'linear') %>%
+  filter(w_response_diversity != 0)
 # intercept constant and large
 linear_large_int_stats <- calc_stats(linear_large_int_results, 'linear') %>%
   filter(w_response_diversity != 0)
 # intercept random and varied
 linear_rand_int_stats <- calc_stats(linear_rand_int_results, 'linear') %>%
+  filter(w_response_diversity != 0)
+# intercept random and varied (50 species)
+linear_rand_int_n50_stats <- calc_stats(linear_rand_int_n50_results, 'linear') %>%
   filter(w_response_diversity != 0)
 
 # gaussian response shape -----------
@@ -99,6 +123,88 @@ gaussian_varied_n10_stats <- calc_stats(gaussian_varied_n10_results, 'gaussian')
 # weighted RD
 gaussian_varied_n50_stats <- calc_stats(gaussian_varied_n50_results, 'gaussian') %>%
   filter(w_response_diversity != 0)
+
+# perfectly crossing cases ------------
+# slope is small and constant
+crossing_small_slope_stats <- calc_stats(crossing_small_slope_results, 'linear') %>%
+  filter(w_response_diversity != 0, resilience != Inf)
+
+# slope is large and constant
+crossing_large_slope_stats <- calc_stats(crossing_large_slope_results, 'linear') %>%
+  filter(w_response_diversity != 0, resilience != Inf)
+
+# slope is randomized
+crossing_rand_slope_stats <- calc_stats(crossing_rand_slope_results, 'linear') %>%
+  filter(w_response_diversity != 0, resilience != Inf)
+
+# calculate summary stats for each case --------------
+linear_summary <- data.frame(case = c("small_intercept", "mid_intercept", "large_intercept", "rand_intercept", "rand_intercept_n50"),
+                             abund_int_mean = c(mean(linear_small_int_results$abundance_intercept),
+                                                mean(linear_mid_int_results$abundance_intercept),
+                                                mean(linear_large_int_results$abundance_intercept),
+                                                mean(linear_rand_int_results$abundance_intercept),
+                                                mean(linear_rand_int_n50_results$abundance_intercept)),
+                             abund_int_sd = c(sd(linear_small_int_results$abundance_intercept),
+                                              sd(linear_mid_int_results$abundance_intercept),
+                                              sd(linear_large_int_results$abundance_intercept),
+                                              sd(linear_rand_int_results$abundance_intercept),
+                                              sd(linear_rand_int_n50_results$abundance_intercept)))
+
+gaussian_summary <- data.frame(case = c("constant", "varied", "varied_n50"),
+                             a_mean = c(mean(gaussian_constant_results$a),
+                                                mean(gaussian_varied_n10_results$a),
+                                                mean(gaussian_varied_n50_results$a)),
+                             a_sd = c(sd(gaussian_constant_results$a),
+                                              sd(gaussian_varied_n10_results$a),
+                                              sd(gaussian_varied_n50_results$a)),
+                             c_mean = c(mean(gaussian_constant_results$c),
+                                        mean(gaussian_varied_n10_results$c),
+                                        mean(gaussian_varied_n50_results$c)),
+                             c_sd = c(sd(gaussian_constant_results$c),
+                                      sd(gaussian_varied_n10_results$c),
+                                      sd(gaussian_varied_n50_results$c)))
+
+crossing_summary <- data.frame(case = c("small_slope", "large_slope", "rand_slope"),
+                             slope_mean = c(mean(crossing_small_slope_results$abundance_slope),
+                                                mean(crossing_large_slope_results$abundance_slope),
+                                                mean(crossing_rand_slope_results$abundance_slope)),
+                             slope_sd = c(sd(crossing_small_slope_results$abundance_slope),
+                                              sd(crossing_large_slope_results$abundance_slope),
+                                              sd(crossing_rand_slope_results$abundance_slope)))
+
+## collate all cases for boxplots --------
+# add case column
+linear_cases <- list(linear_small_int_results = linear_small_int_results, 
+                     linear_mid_int_results = linear_mid_int_results, 
+                     linear_large_int_results = linear_large_int_results, 
+                     linear_rand_int_results = linear_rand_int_results, 
+                     linear_rand_int_n50_results = linear_rand_int_n50_results)
+
+all_linears <- bind_rows(lapply(names(linear_cases), function(x) {
+  df <- linear_cases[[x]]
+  df$case <- x
+  df
+}))
+
+gaussian_cases <- list(gaussian_constant_results = gaussian_constant_results, 
+                       gaussian_varied_n10_results = gaussian_varied_n10_results, 
+                       gaussian_varied_n50_results = gaussian_varied_n50_results)
+
+all_gaussians <- bind_rows(lapply(names(gaussian_cases), function(x) {
+  df <- gaussian_cases[[x]]
+  df$case <- x
+  df
+}))
+
+crossing_cases <- list(crossing_small_slope_results = crossing_small_slope_results, 
+                       crossing_large_slope_results = crossing_large_slope_results, 
+                       crossing_rand_slope_results = crossing_rand_slope_results)
+
+all_crossings <- bind_rows(lapply(names(crossing_cases), function(x) {
+  df <- crossing_cases[[x]]
+  df$case <- x
+  df
+}))
 
 # species removal experiment -----------
 # pick a random value for environment
@@ -224,39 +330,69 @@ ggplot(data = species_removal_stats, aes(x = removal, y = delta_tf)) +
         legend.title = element_text(size = 25),
         panel.grid = element_blank())
 
+# summary stats figs ----------
+# linear cases
+ggplot(data = all_linears, aes(x = case, y = abundance_intercept)) +
+  geom_boxplot()
+# gaussian cases
+ggplot(data = all_gaussians, aes(x = case, y = a)) +
+  geom_boxplot()
+ggplot(data = all_gaussians, aes(x = case, y = c)) +
+  geom_boxplot()
+# crossing cases
+ggplot(data = all_crossings, aes(x = case, y = abs(abundance_slope))) +
+  geom_boxplot()
+ggplot(data = all_crossings, aes(x = case, y = abundance_intercept)) +
+  geom_boxplot()
 
-# Fig S1.
+# Fig S1. -----------
 p_contribute_plot(p_contribute_n10_stats)
 p_contribute_plot(p_contribute_n50_stats)
 
-# Fig 1, abundance vs environment
+# Fig 1, abundance vs environment ------------
 abundance_environment_plot(linear_small_int_results)
+abundance_environment_plot(linear_large_int_results)
 abundance_environment_plot(linear_rand_int_results)
+abundance_environment_plot(crossing_small_slope_results)
+abundance_environment_plot(crossing_large_slope_results)
+abundance_environment_plot(crossing_rand_slope_results)
+
 ae1 <- abundance_environment_plot(linear_rand_int_results) +
   theme(legend.position = "none")
 ae2 <- abundance_environment_plot(gaussian_varied_n10_results) +
+  labs(y = "") +
+  theme(legend.position = "none")
+ae3 <- abundance_environment_plot(crossing_large_slope_results) +
   labs(y = "")
-abundance_environment_plot(gaussian_varied_n10_results)
 
-plot_grid(ae1, ae2, labels = c("Linear", "Gaussian"), hjust = -2, vjust = 2, label_size = 20)
+plot_grid(ae1, ae2, ae3, labels = c("Linear", "Gaussian", "Crossing"),
+          nrow = 1,
+          hjust = -2,
+          vjust = 2,
+          rel_widths = c(3, 3, 4),
+          label_size = 20)
 
-# Fig 2, function vs abundance
+# Fig 2, function vs abundance ----------
 function_abundance_plot(linear_small_int_results)
 function_abundance_plot(linear_large_int_results)
 function_abundance_plot(linear_rand_int_results)
 function_abundance_plot(gaussian_varied_n10_results)
 function_abundance_plot(gaussian_varied_n50_results)
+function_abundance_plot(crossing_small_slope_results)
 
 # Fig 3, total function vs environment
 total_function_environment_plot(linear_small_int_results)
 total_function_environment_plot(linear_large_int_results)
+total_function_environment_plot(crossing_large_slope_results)
 tf1 <- total_function_environment_plot(linear_rand_int_results) +
   theme(legend.position = "none")
 tf2 <- total_function_environment_plot(gaussian_varied_n10_results) +
+  labs(y = "") +
+  theme(legend.position = "none")
+tf3 <- total_function_environment_plot(crossing_rand_slope_results) +
   labs(y = "")
-total_function_environment_plot(gaussian_varied_n50_results)
 
-plot_grid(tf1, tf2, labels = c("Linear", "Gaussian"), hjust = -1.7, vjust = 2, label_size = 20, rel_widths = c(3, 4))
+plot_grid(tf1, tf2, tf3, labels = c("Linear", "Gaussian", "Crossing"), nrow = 1, hjust = -1.7, vjust = 2, label_size = 20, rel_widths = c(3, 3, 4.5))
 
 # Fig 4, resilience vs mean weighted response diversity
 resilience_w_rd_plot(linear_small_int_stats)
@@ -264,6 +400,7 @@ resilience_w_rd_plot(linear_large_int_stats)
 resilience_w_rd_plot(linear_rand_int_stats)
 resilience_w_rd_plot(gaussian_varied_n10_stats)
 resilience_w_rd_plot(gaussian_varied_n50_stats)
+resilience_w_rd_plot(crossing_small_slope_stats)
 
 # Fig ?, resilience vs unweighted RD
 resilience_u_rd_plot(linear_small_int_stats)
@@ -278,6 +415,7 @@ function_w_rd_plot(linear_large_int_stats)
 function_w_rd_plot(linear_rand_int_stats)
 function_w_rd_plot(gaussian_varied_n10_stats)
 function_w_rd_plot(gaussian_varied_n50_stats)
+function_w_rd_plot(crossing_large_slope_stats)
 
 # Fig ?, total function vs unweighted RD
 function_u_rd_plot(linear_small_int_stats)
@@ -287,30 +425,66 @@ function_u_rd_plot(gaussian_varied_n10_stats)
 function_u_rd_plot(gaussian_varied_n50_stats)
 
 # Fig ?, resilience vs mean weighted RD vs total function
-rfw1 <- resilience_function_w_rd_plot(linear_small_int_stats)
-rfw2 <- resilience_function_w_rd_plot(linear_large_int_stats) +
-  labs(y = "")
-rfw3 <- resilience_function_w_rd_plot(linear_rand_int_stats) +
-  labs(y = "")
-rfw4 <- resilience_function_w_rd_plot(gaussian_varied_n10_stats)
-rfw5 <- resilience_function_w_rd_plot(gaussian_varied_n50_stats) +
-  labs(y = "")
+rfw1 <- resilience_function_w_rd_plot(linear_small_int_stats) +
+  labs(x = "")
+rfw2 <- resilience_function_w_rd_plot(linear_mid_int_stats) +
+  labs(y = "", x = "")
+rfw3 <- resilience_function_w_rd_plot(linear_large_int_stats) +
+  labs(y = "", x = "")
+rfw4 <- resilience_function_w_rd_plot(linear_rand_int_stats)  +
+  labs(y = "", x = "")
+rfw5 <- resilience_function_w_rd_plot(linear_rand_int_n50_stats) +
+  labs(x = "")
 rfw6 <- resilience_function_w_rd_plot(gaussian_constant_stats) +
+  labs(y = "", x = "")
+rfw7 <- resilience_function_w_rd_plot(gaussian_varied_n10_stats) +
+  labs(y = "", x = "")
+rfw8 <- resilience_function_w_rd_plot(gaussian_varied_n50_stats) +
+  labs(y = "")
+rfw9 <- resilience_function_w_rd_plot(crossing_small_slope_stats) +
+  labs()
+rfw10 <- resilience_function_w_rd_plot(crossing_large_slope_stats) +
+  labs(y = "")
+rfw11 <- resilience_function_w_rd_plot(crossing_rand_slope_stats) +
   labs(y = "")
 
-plot_grid(rfw1, rfw2, rfw3, rfw4, rfw5, rfw6, hjust = -1.5, labels = c("Case 1",
-                                                                       "Case 2",
-                                                                       "Case 3",
-                                                                       "Case 4",
-                                                                       "Case 5",
-                                                                       "Case 6"))
+resilience_function_w_rd_plot(gaussian_varied_n10_stats)
 
-plot_grid(rfw1, rfw2, rfw3, nrow = 3, hjust = -1.5, labels = c("Case 1",
-                                       "Case 2",
-                                       "Case 3"))
-plot_grid(rfw4, rfw5, rfw6, labels = c("Case 4",
-                                       "Case 5",
-                                       "Case 6"))
+plot_grid(rfw1, rfw2, rfw3, rfw4, rfw5, rfw6, rfw7, rfw8, rfw9, rfw10, rfw11,
+          hjust = -1.5,
+          labels = c("Case 1",
+                     "Case 2",
+                     "Case 3",
+                     "Case 4",
+                     "Case 5",
+                     "Case 6",
+                     "Case 7",
+                     "Case 8",
+                     "Case 9",
+                     "Case 10",
+                     "Case 11"))
+
+
+plot_grid(rfw1 + labs(x = ""), rfw2 + labs(x = ""), rfw3, rfw4, rfw5,
+          hjust = -1.5,
+          labels = c("Case 1",
+                     "Case 2",
+                     "Case 3",
+                     "Case 4",
+                     "Case 5"))
+
+plot_grid(rfw6 + labs(y = "log(Stability)", x = ""), rfw7 + labs(y = ""), rfw8 + labs(y = "log(Stability)"),
+          nrow = 2,
+          hjust = -1.5,
+          labels = c("Case 6",
+                     "Case 7",
+                     "Case 8"))
+
+plot_grid(rfw9 + labs(y = "log(Stability)", x = ""), rfw10, rfw11 + labs(y = "log(Stability)"),
+          hjust = -1.5,
+          labels = c("Case 9",
+                     "Case 10",
+                     "Case 11"))
 
 # Fig ?, resilience vs unweighted RD vs total function
 rfu1 <- resilience_function_u_rd_plot(linear_small_int_stats) +
@@ -346,7 +520,7 @@ rd_group_colors <- viridis(length(unique(gaussian_risk_reward$rd_group)), option
 
 ggplot(gaussian_risk_reward, aes(x = (1/resilience), y = total_function)) +
   geom_point(aes(col = w_response_diversity), size = 2, alpha = 0.8) +
-  geom_smooth(aes(group = rd_group, col = 200*as.numeric(rd_group)), se = FALSE, span = 2, linewidth = 2, linetype = "dashed") +
+  geom_smooth(aes(group = rd_group, col = as.numeric(rd_group)), se = FALSE, span = 2, linewidth = 2, linetype = "dashed") +
   scale_color_viridis_c(name = "Response Diversity") +  # For the points
   labs(x = "Var(Function)", y = "Function") +
   theme_bw() +
@@ -408,14 +582,26 @@ summary(lm(total_function ~ log(resilience), data = gaussian_constant_stats))
 
 ## total_function ~ stability * response_diversity -------------
 summary(lm(total_function ~ log(resilience) * w_response_diversity, data = linear_small_int_stats))
+summary(lm(total_function ~ log(resilience) * w_response_diversity, data = linear_mid_int_stats))
 summary(lm(total_function ~ log(resilience) * w_response_diversity, data = linear_large_int_stats))
 summary(lm(total_function ~ log(resilience) * w_response_diversity, data = linear_rand_int_stats))
 summary(lm(total_function ~ log(resilience) * w_response_diversity, data = gaussian_varied_n10_stats))
 summary(lm(total_function ~ log(resilience) * w_response_diversity, data = gaussian_varied_n50_stats))
 summary(lm(total_function ~ log(resilience) * w_response_diversity, data = gaussian_constant_stats))
 
+## stability ~ total_function * response_diversity -------------
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = linear_small_int_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = linear_mid_int_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = linear_large_int_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = linear_rand_int_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = linear_rand_int_n50_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = crossing_small_slope_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = crossing_large_slope_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = crossing_rand_slope_stats))
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_varied_n10_stats))
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_varied_n50_stats))
+summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_constant_stats))
+
 
 ## rescale variables to study interaction ------------
 gaussian_n10_rescaled <- gaussian_varied_n10_stats %>%
