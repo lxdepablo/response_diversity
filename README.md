@@ -1,5 +1,5 @@
 # Response Diversity/Stability
-Simulation and analysis code for studying the relationship between response diversity and stability of ecosystem function. Code relating response diversity to stability in simulated ecosystems can be accessed [here](https://github.com/lxdepablo/response_diversity/blob/main/code/rd_analysis.R), and code to study this same relationship in empirical data from the Cedar Creek LTER can be accessed [here](https://github.com/lxdepablo/response_diversity/blob/main/code/cc_analysis.R).
+Simulation and analysis code for studying the relationship between response diversity and stability of ecosystem function. Code relating response diversity to stability in simulated ecosystems is [here](https://github.com/lxdepablo/response_diversity/blob/main/code/rd_analysis.R), and code to study this same relationship in empirical data from the Cedar Creek LTER is [here](https://github.com/lxdepablo/response_diversity/blob/main/code/cc_analysis.R).
 
 # Data Access
 Data for the Cedar Creek LTER analysis is available [here](https://drive.google.com/drive/folders/1hzzEOYPQBuKaX8O1fMiJQCU_BNPjVkbe?usp=sharing) or on the [Cedar Creek LTER website](https://cedarcreek.umn.edu/research/data).
