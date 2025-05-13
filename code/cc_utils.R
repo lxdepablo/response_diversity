@@ -1,3 +1,8 @@
+library(dplyr)
+library(purrr)
+library(minpack.lm)
+library(furrr)
+
 # Define the Gaussian function
 gaussian <- function(x, a, b, c) {
   a * exp(-((x - b)^2) / (2 * c^2))
@@ -99,3 +104,87 @@ fit_response_curve <- function(df, sp){
     )
   }
 }
+
+
+# functions to fit response curves with DOY as covariate
+## gaussian with doy effect
+gaussian_doy <- function(temp, doy_c, a, b, c, d) {
+  a * exp(-((temp - b)^2) / (2 * c^2)) + d * doy_c
+}
+
+## iqr outlier filter
+iqr_filter <- function(x, k = 1.5) {
+  q <- quantile(x, c(.25, .75), na.rm = TRUE)
+  iqr <- diff(q)
+  x >= (q[1] - k * iqr) & x <= (q[2] + k * iqr)
+}
+
+fit_response_curve_doy <- function(dat_sp,
+                                   species,
+                                   min_n = 10,
+                                   center_doy = TRUE) {
+  if (nrow(dat_sp) < min_n) return(NULL)
+  
+  # center day‑of‑year so d represents within‑year timing
+  dat_sp <- dat_sp %>%
+    mutate(doy_c = if (center_doy)
+      day_of_year - mean(day_of_year, na.rm = TRUE)
+      else
+        day_of_year)
+  
+  # simple IQR filter (optional)
+  q  <- quantile(dat_sp$biomass_g_m2, c(.25, .75), na.rm = TRUE)
+  iqr <- diff(q)
+  dat_sp <- dat_sp %>%
+    filter(biomass_g_m2 >= q[1] - 1.5 * iqr,
+           biomass_g_m2 <= q[2] + 1.5 * iqr)
+  
+  # starting values & bounds
+  start_vals <- list(
+    a = max(dat_sp$biomass_g_m2, na.rm = TRUE),
+    b = weighted.mean(dat_sp$mean_max_temp, dat_sp$biomass_g_m2),
+    c = sd(dat_sp$mean_max_temp, na.rm = TRUE),
+    # consider c=span/6
+    d = 0
+  )
+  
+  span <- diff(range(dat_sp$mean_max_temp))
+  
+  lower <- c(a = 0,
+             b = min(dat_sp$mean_max_temp),
+             c = 0.1,
+             d = -Inf)
+  upper <- c(a = Inf,
+             b = max(dat_sp$mean_max_temp),
+             c = span/2,
+             d = Inf)
+  
+  fit <- tryCatch(
+    nlsLM(biomass_g_m2 ~ gaussian_doy(mean_max_temp, doy_c, a, b, c, d),
+          data = dat_sp,
+          start = start_vals,
+          lower = lower,
+          upper = upper,
+          control = nls.control(maxiter = 1000, minFactor = 1/1024)),
+    error = function(e) NULL
+  )
+  if (is.null(fit)) return(NULL)
+  
+  ## smooth prediction (DOY fixed at its mean, i.e. doy_c = 0)
+  temp_seq <- seq(min(dat_sp$mean_max_temp),
+                  max(dat_sp$mean_max_temp),
+                  length.out = 100)
+  newdata  <- tibble(mean_max_temp = temp_seq,
+                     doy_c = 0)
+  tibble(
+    species = species,
+    mean_max_temp = temp_seq,
+    predicted = predict(fit, newdata = newdata),
+    a = coef(fit)["a"],
+    b = coef(fit)["b"],
+    c = coef(fit)["c"],
+    d = coef(fit)["d"],
+    biomass_g_m2 = mean(dat_sp$biomass_g_m2)
+  )
+}
+

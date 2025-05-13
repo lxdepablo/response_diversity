@@ -102,13 +102,6 @@ growing_season_start <- bind_rows(lapply(unique(climate_clean$year), function(y)
 ggplot(data = climate_clean, aes(x = max_temp_deg_c)) +
   geom_histogram()
 
-# calculate monthly average temperatures and precip
-climate_monthly <- climate_clean %>%
-  group_by(year, month) %>%
-  summarize(avg_max_temp_c = mean(max_temp_deg_c),
-            avg_min_temp_c = mean(min_temp_deg_c),
-            avg_precip_mm = mean(precip_mm))
-
 # drop unneeded columns from biomass data
 biomass_clean <- biomass_raw %>%
   select(c(year, month, date, plot, strip, species, num_sp, sp_num, biomass_g_m2)) %>%
@@ -274,14 +267,28 @@ response_curve_df <- biomass_clim %>%
   # use only monoculture data
   filter(num_sp == 1,
          # only fit curves for planted species
-         planted == 1)
+         planted == 1) %>%
+  # add column for day of year
+  mutate(day_of_year = yday(mdy(date)))
 
 # fit response curves for each species
 temperature_fits <- bind_rows(lapply(unique(response_curve_df$species),
                                      fit_response_curve,
                                      df = response_curve_df))
 
+temperature_fits <- response_curve_df %>%
+  # make one tibble per species
+  nest(data = -species) %>% 
+  mutate(curve = map2(data, species, fit_response_curve_doy, center_doy=TRUE)) %>%
+  filter(!map_lgl(curve, is.null)) %>%
+  mutate(curve = map(curve, ~ select(.x, -species))) %>%
+  unnest(curve)
+
 # visualize response curves
+temperature_fits %>%
+  ggplot(aes(mean_max_temp, predicted, colour = species)) +
+  geom_line() +
+  theme_bw()
 # get all species
 all_sp <- unique(temperature_fits$species)
 # pick some random species to plot
@@ -307,6 +314,13 @@ ggplot(data = curr_sp, aes(x = mean_max_temp, y = biomass_g_m2)) +
         legend.text = element_text(size = 20),
         legend.title = element_text(size = 25),
         panel.grid = element_blank())
+
+# check how many pancake-shaped curves there are
+diagnostics <- temperature_fits %>% 
+  distinct(species, a, b, c) %>% 
+  mutate(span      = map_dbl(species, ~ diff(range(response_curve_df$mean_max_temp[response_curve_df$species == .x]))),
+         flat_flag = c > 0.5 * span)
+table(diagnostics$flat_flag)
 
 # visualize optima weighted means
 ggplot(data = optima, aes(x = max_temp_optimum)) +
@@ -400,6 +414,10 @@ model_norm <- lm(log(stability_norm) ~ rd_norm*tf_norm
                  data = stab_rd)
 summary(model_norm)
 
+simple_model <- lm(log(stability_norm) ~ rd_norm + richness_norm,
+                   data = stab_rd)
+summary(simple_model)
+
 partials <- plot_model(model, type = "pred")
 plot_grid(partials[[1]], partials[[2]], partials[[7]])
 
@@ -407,7 +425,7 @@ plot_grid(partials[[1]], partials[[2]], partials[[7]])
 library(lmtest)
 
 # run Breusch-Pagan test, p < 0.05 means there's heteroskedasticity
-bptest(model_norm)
+bptest(simple_model)
 
 # calculate more robust standard erros
 library(sandwich)
