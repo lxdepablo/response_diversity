@@ -602,13 +602,17 @@ summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gauss
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_varied_n50_stats))
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_constant_stats))
 
-
-## rescale variables to study interaction ------------
-gaussian_n10_rescaled <- gaussian_varied_n10_stats %>%
-  mutate(total_function_scaled = scale(total_function)[,1],
-         log_resilience_scaled = scale(log(resilience))[,1],
-         rd_scaled = scale(w_response_diversity)[,1])
-
-summary(lm(log_resilience_scaled ~ total_function_scaled * rd_scaled, data = gaussian_n10_rescaled))
+## stability ~ response_diversity -------------
+summary(lm(log(resilience) ~ w_response_diversity, data = linear_small_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = linear_mid_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = linear_large_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = linear_rand_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = linear_rand_int_n50_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = crossing_small_slope_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = crossing_large_slope_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = crossing_rand_slope_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = gaussian_varied_n10_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = gaussian_varied_n50_stats))
+summary(lm(log(resilience) ~ w_response_diversity, data = gaussian_constant_stats))
 
 
