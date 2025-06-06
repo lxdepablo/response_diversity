@@ -3,6 +3,7 @@ library(tidyverse)
 library(cowplot)
 library(viridis)
 library(scales)
+library(matrixStats)
 
 # set working directory --------
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -425,66 +426,119 @@ function_u_rd_plot(gaussian_varied_n10_stats)
 function_u_rd_plot(gaussian_varied_n50_stats)
 
 # Fig ?, resilience vs mean weighted RD vs total function
-rfw1 <- resilience_function_w_rd_plot(linear_small_int_stats) +
-  labs(x = "")
-rfw2 <- resilience_function_w_rd_plot(linear_mid_int_stats) +
+rfw1 <- resilience_w_rd_plot(linear_small_int_stats) +
   labs(y = "", x = "")
-rfw3 <- resilience_function_w_rd_plot(linear_large_int_stats) +
+rfw2 <- resilience_w_rd_plot(linear_mid_int_stats) +
   labs(y = "", x = "")
-rfw4 <- resilience_function_w_rd_plot(linear_rand_int_stats)  +
+rfw3 <- resilience_w_rd_plot(linear_large_int_stats) +
   labs(y = "", x = "")
-rfw5 <- resilience_function_w_rd_plot(linear_rand_int_n50_stats) +
-  labs(x = "")
-rfw6 <- resilience_function_w_rd_plot(gaussian_constant_stats) +
+rfw4 <- resilience_w_rd_plot(linear_rand_int_stats)  +
   labs(y = "", x = "")
-rfw7 <- resilience_function_w_rd_plot(gaussian_varied_n10_stats) +
+rfw5 <- resilience_w_rd_plot(linear_rand_int_n50_stats) +
   labs(y = "", x = "")
-rfw8 <- resilience_function_w_rd_plot(gaussian_varied_n50_stats) +
-  labs(y = "")
-rfw9 <- resilience_function_w_rd_plot(crossing_small_slope_stats) +
-  labs()
-rfw10 <- resilience_function_w_rd_plot(crossing_large_slope_stats) +
-  labs(y = "")
-rfw11 <- resilience_function_w_rd_plot(crossing_rand_slope_stats) +
-  labs(y = "")
+rfw6 <- resilience_w_rd_plot(gaussian_constant_stats) +
+  labs(y = "", x = "")
+rfw7 <- resilience_w_rd_plot(gaussian_varied_n10_stats) +
+  labs(y = "", x = "")
+rfw8 <- resilience_w_rd_plot(gaussian_varied_n50_stats) +
+  labs(y = "", x = "")
+rfw9 <- resilience_w_rd_plot(crossing_small_slope_stats) +
+  labs(y = "", x = "")
+rfw10 <- resilience_w_rd_plot(crossing_large_slope_stats) +
+  labs(y = "", x = "")
+rfw11 <- resilience_w_rd_plot(crossing_rand_slope_stats) +
+  labs(y = "", x = "")
 
-resilience_function_w_rd_plot(gaussian_varied_n10_stats)
+# build full figure for fig 2
+linear_plots <- plot_grid(rfw1, rfw2, rfw3, rfw4, rfw5,
+                          ncol = 2,
+                          hjust = -3.8,
+                          labels = c("Case 1",
+                                     "Case 4",
+                                     "Case 2",
+                                     "Case 5",
+                                     "Case 3"),
+                          byrow = FALSE,
+                          align = "hv",
+                          axis = "tl")
+linear_title <- get_plot_component(ggplot() +
+                                     labs(title = "Linear Cases") +
+                                     theme(plot.title = element_text(hjust = 0.5,
+                                                                     size = 15)),
+                                   "title",
+                                   return_all=T)[[2]]
+linear_plots_title <- plot_grid(linear_title, linear_plots,
+                                nrow = 2,
+                                rel_heights = c(0.05, 0.95))
+gaussian_plots <- plot_grid(rfw6, rfw7, rfw8,
+                          ncol = 1,
+                          hjust = -3.3,
+                          labels = c("Case 6",
+                                     "Case 7",
+                                     "Case 8"),
+                          byrow = FALSE,
+                          align = "hv",
+                          axis = "tl")
+gaussian_title <- get_plot_component(ggplot() +
+                                       labs(title = "Gaussian Cases") +
+                                       theme(plot.title = element_text(hjust = 0.5,
+                                                                       size = 15)),
+                                   "title",
+                                   return_all=T)[[2]]
+gaussian_plots_title <- plot_grid(gaussian_title, gaussian_plots,
+                                nrow = 2,
+                                rel_heights = c(0.05, 0.95))
+crossing_plots <- plot_grid(rfw9,rfw10, rfw11,
+                          ncol = 1,
+                          hjust = c(-3.1, -3, -3),
+                          labels = c("Case 9 ",
+                                     "Case 10",
+                                     "Case 11"),
+                          byrow = FALSE,
+                          align = "hv",
+                          axis = "tl")
+crossing_title <- get_plot_component(ggplot() +
+                                       labs(title = "Perfectly Crossing Cases") +
+                                       theme(plot.title = element_text(hjust = 0.5,
+                                                                                                               size = 15)),
+                                   "title",
+                                   return_all=T)[[2]]
+crossing_plots_title <- plot_grid(crossing_title, crossing_plots,
+                                nrow = 2,
+                                rel_heights = c(0.05, 0.95))
 
-plot_grid(rfw1, rfw2, rfw3, rfw4, rfw5, rfw6, rfw7, rfw8, rfw9, rfw10, rfw11,
-          hjust = -1.5,
-          labels = c("Case 1",
-                     "Case 2",
-                     "Case 3",
-                     "Case 4",
-                     "Case 5",
-                     "Case 6",
-                     "Case 7",
-                     "Case 8",
-                     "Case 9",
-                     "Case 10",
-                     "Case 11"))
+fig2_xlab <- get_plot_component(ggplot() +
+                                  labs(x = "Response Diversity") +
+                                  theme(axis.title = element_text(size = 25)),
+                                "xlab-b")
+fig2_ylab <- get_plot_component(ggplot() +
+                                  labs(y = "log(Functional Stability)") +
+                                  theme(axis.title = element_text(size = 25)),
+                                "ylab-l")
 
 
-plot_grid(rfw1 + labs(x = ""), rfw2 + labs(x = ""), rfw3, rfw4, rfw5,
-          hjust = -1.5,
-          labels = c("Case 1",
-                     "Case 2",
-                     "Case 3",
-                     "Case 4",
-                     "Case 5"))
+fig2_plots_ylab <- plot_grid(fig2_ylab,
+                             linear_plots_title,
+                             gaussian_plots_title,
+                             crossing_plots_title,
+                             ncol = 4,
+                             rel_widths = c(0.04, 0.48, 0.24, 0.24))
+fig2_full <- plot_grid(fig2_plots_ylab, fig2_xlab,
+                       nrow = 2,
+                       rel_heights = c(0.96, 0.04))
 
-plot_grid(rfw6 + labs(y = "log(Stability)", x = ""), rfw7 + labs(y = ""), rfw8 + labs(y = "log(Stability)"),
-          nrow = 2,
-          hjust = -1.5,
-          labels = c("Case 6",
-                     "Case 7",
-                     "Case 8"))
+# Fig 3
+ggplot(data = gaussian_varied_n50_stats, aes(x = normalize(w_response_diversity, method = "range"), y = log(resilience))) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = "lm") +
+  labs(x = "Normalized Response Diversity", y = "log(Functional Stability)", title = "Simulated") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = 25),
+        legend.text = element_text(size = 20),
+        legend.title = element_text(size = 25))
 
-plot_grid(rfw9 + labs(y = "log(Stability)", x = ""), rfw10, rfw11 + labs(y = "log(Stability)"),
-          hjust = -1.5,
-          labels = c("Case 9",
-                     "Case 10",
-                     "Case 11"))
 
 # Fig ?, resilience vs unweighted RD vs total function
 rfu1 <- resilience_function_u_rd_plot(linear_small_int_stats) +
