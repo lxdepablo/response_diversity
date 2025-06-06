@@ -259,13 +259,13 @@ weighted_rd <- function(df, response_shape){
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), slope = median(abundance_slope)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance)/mean(abs(slope)))
+      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance, normwt=TRUE)/mean(abs(slope)))
   } else if(response_shape == 'gaussian'){
     rd <- df %>%
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance)/mean(b))
+      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance, normwt=TRUE)/mean(b))
   } else {
     print("response shape must be either 'linear' or 'gaussian'.")
     return(NULL)
@@ -377,7 +377,7 @@ total_function_environment_plot <- function(df){
 
 resilience_w_rd_plot <- function(df){
   ggplot(data = df, aes(x = w_response_diversity, y = log(resilience))) +
-    geom_point(size=3) +
+    geom_point(size=2, alpha=0.3) +
     geom_smooth(method = "lm") +
     labs(x = "Weighted Response Diversity", y = "log(Resilience)") +
     theme_bw() +
@@ -385,7 +385,8 @@ resilience_w_rd_plot <- function(df){
           axis.text = element_text(size = 20),
           axis.title = element_text(size = 25),
           legend.text = element_text(size = 20),
-          legend.title = element_text(size = 25))
+          legend.title = element_text(size = 25),
+          plot.margin = unit(c(0,0.3,0,0), "cm"))
 }
 
 resilience_u_rd_plot <- function(df){

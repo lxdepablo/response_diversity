@@ -7,6 +7,7 @@ library(BBmisc)
 library(sjPlot)
 library(cowplot)
 library(parallel)
+library(ggeffects)
 
 # set working directory
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -341,7 +342,7 @@ ggplot() +
 # calculate functional stability across environments
 stability <- biomass_clim %>%
   # exclude monocultures
-  filter(num_sp > 1) %>%
+  filter(num_sp > 1, planted == 1) %>%
   group_by(year, month, plot, species) %>%
   # get mean function for each species for each plot
   summarize(mean_biomass_g_m2 = mean(biomass_g_m2),
@@ -356,14 +357,17 @@ stability <- biomass_clim %>%
   summarize(stability = 1/var(total_function)/mean(total_function),
             richness = mean(richness))
 
+ggplot(data = stab_rd, aes(x = richness)) +
+  geom_histogram()
+
 # calculate response diversity
 response_diversity <- biomass_clim %>%
   # exclude monocultures
-  filter(num_sp > 1) %>%
+  filter(num_sp > 1, planted == 1) %>%
   # get mean function for each species each year for each plot
   group_by(year, month, plot, species) %>%
   summarize(mean_biomass_g_m2 = mean(biomass_g_m2),
-            richness = mean(sp_num)) %>%
+            richness = mean(num_sp)) %>%
   # get mean function across all years for each species for each plot
   group_by(plot, species) %>%
   summarize(mean_biomass_g_m2 = mean(mean_biomass_g_m2), richness = mean(richness)) %>%
@@ -377,15 +381,15 @@ response_diversity <- biomass_clim %>%
 # bring together stability and RD for each plot
 stab_rd <- stability %>%
   left_join(response_diversity, by = "plot") %>%
-  # bring in soil traits
   left_join(soil_traits_norm, by = "plot") %>%
-  # normalize rd and stability
-  mutate(stability_norm = normalize(stability, method = "range") + 0.0000000001,
-         rd_norm = normalize(response_diversity, method = "range"),
-         richness_norm = normalize(richness, method = "range"),
-         tf_norm = normalize(total_function, method = "range")) %>%
+  mutate(
+    log_stab = log(stability),
+    log_stab_norm = normalize(log_stab, method = "range"),
+    rd_norm = normalize(response_diversity, method = "range"),
+    richness_norm = normalize(richness, method = "range"),
+    tf_norm = normalize(total_function, method = "range")
+  ) %>%
   drop_na()
-
 
 # visualize data
 ggplot(data = stab_rd, aes(x = response_diversity, y = log(stability), col = total_function, size = richness)) +
@@ -394,6 +398,20 @@ ggplot(data = stab_rd, aes(x = response_diversity, y = log(stability), col = tot
   scale_color_viridis_c() +
   labs(x = "Response Diversity (Temperature)", y = "log(Functional Stability)", col = "Total Function (g/m^2)", size = "Richness") +
   theme_minimal()
+
+# make plots for fig 3
+
+# this should be a partial regression where richness is held constant
+cc_fig3 <- ggplot(data = stab_rd, aes(x = response_diversity, y = log(stability))) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = "lm") +
+  labs(x = "Response Diversity", y = "log(Functional Stability)", title = "Cedar Creek") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = 25),
+        legend.text = element_text(size = 20),
+        legend.title = element_text(size = 25))
 
 # build models
 model <- lm(log(stability) ~ response_diversity*total_function
@@ -405,8 +423,8 @@ model <- lm(log(stability) ~ response_diversity*total_function
             data = stab_rd)
 summary(model)
 
-model_norm <- lm(log(stability_norm) ~ rd_norm*tf_norm
-                 + richness_norm
+model_norm <- lm(log_stab ~ rd_z*tf_z
+                 + richness_z
                  + phosphorus
                  + no2no3
                  + nh4
@@ -414,12 +432,33 @@ model_norm <- lm(log(stability_norm) ~ rd_norm*tf_norm
                  data = stab_rd)
 summary(model_norm)
 
-simple_model <- lm(log(stability_norm) ~ rd_norm + richness_norm,
+simple_model <- lm(log_stab ~ rd_norm + richness_norm,
                    data = stab_rd)
 summary(simple_model)
 
-partials <- plot_model(model, type = "pred")
-plot_grid(partials[[1]], partials[[2]], partials[[7]])
+partials <- plot_model(simple_model, type = "pred")
+plot_grid(partials[[1]], partials[[2]], nrow = 2)
+partials[[1]]
+
+# make partial regression with ggplot for pretty figures
+pred_rd <- ggpredict(simple_model, terms = "rd_norm")
+plot(pred_rd)
+
+# plot marginal effects
+ggplot() +
+  # points from original data
+  geom_point(data = stab_rd, aes(x = rd_norm, y = log_stab), alpha = 0.3) +
+  # fitted line
+  geom_line(data = pred_rd, aes(x = x, y = predicted), color = "blue", size = 1) +
+  # confidence ribbon
+  geom_ribbon(data = pred_rd, aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "Normalized Response Diversity", y = "log(Functional Stability)", title = "Cedar Creek") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+      axis.text = element_text(size = 20),
+      axis.title = element_text(size = 25),
+      legend.text = element_text(size = 20),
+      legend.title = element_text(size = 25))
 
 # test for heteroskedasticity
 library(lmtest)
