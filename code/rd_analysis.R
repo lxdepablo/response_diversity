@@ -4,6 +4,8 @@ library(cowplot)
 library(viridis)
 library(scales)
 library(matrixStats)
+library(BBmisc)
+library(e1071)
 
 # set working directory --------
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -500,7 +502,7 @@ crossing_plots <- plot_grid(rfw9,rfw10, rfw11,
 crossing_title <- get_plot_component(ggplot() +
                                        labs(title = "Perfectly Crossing Cases") +
                                        theme(plot.title = element_text(hjust = 0.5,
-                                                                                                               size = 15)),
+                                                                       size = 15)),
                                    "title",
                                    return_all=T)[[2]]
 crossing_plots_title <- plot_grid(crossing_title, crossing_plots,
@@ -528,9 +530,10 @@ fig2_full <- plot_grid(fig2_plots_ylab, fig2_xlab,
                        rel_heights = c(0.96, 0.04))
 
 # Fig 3
-ggplot(data = gaussian_varied_n50_stats, aes(x = normalize(w_response_diversity, method = "range"), y = log(resilience))) +
-  geom_point(alpha=0.3) +
+ggplot(data = gaussian_varied_n50_stats, aes(x = normalize(w_response_diversity, method = "range"), y = log(resilience), col = log(tolerance))) +
+  geom_point(alpha=0.3, size = 5) +
   geom_smooth(method = "lm") +
+  scale_color_viridis_c() +
   labs(x = "Normalized Response Diversity", y = "log(Functional Stability)", title = "Simulated") +
   theme_bw() +
   theme(panel.grid = element_blank(),
@@ -538,6 +541,9 @@ ggplot(data = gaussian_varied_n50_stats, aes(x = normalize(w_response_diversity,
         axis.title = element_text(size = 25),
         legend.text = element_text(size = 20),
         legend.title = element_text(size = 25))
+
+ggplot(data = gaussian_varied_n10_stats, aes(x = tolerance)) +
+  geom_histogram()
 
 
 # Fig ?, resilience vs unweighted RD vs total function
@@ -598,12 +604,46 @@ ggplot(linear_rand_int_stats, aes(x = log(1/resilience), y = total_function, col
 
 # make models --------
 ## log(resilience) ~ WRD ----------
-summary(lm(log(resilience) ~ w_response_diversity, data = linear_small_int_stats))
-summary(lm(log(resilience) ~ w_response_diversity, data = linear_large_int_stats))
-summary(lm(log(resilience) ~ w_response_diversity, data = linear_rand_int_stats))
-summary(lm(log(resilience) ~ w_response_diversity, data = gaussian_varied_n10_stats))
-summary(lm(log(resilience) ~ w_response_diversity, data = gaussian_varied_n50_stats))
-summary(lm(log(resilience) ~ w_response_diversity, data = gaussian_constant_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a + c, data = linear_small_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + tolerance, data = linear_large_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + tolerance, data = linear_rand_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a*c, data = gaussian_varied_n10_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a*c, data = gaussian_varied_n50_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a*c + coverage_prop, data = gaussian_constant_stats))
+
+summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope + evenness + coverage_prop, data = gaussian_varied_n10_stats))
+
+summary(lm(log(resilience) ~ w_response_diversity +
+             a * c +
+             tolerance +
+             evenness +
+             coverage_prop +
+             min_spacing,
+           data = gaussian_varied_n10_stats))
+
+summary(lm(log(resilience) ~ w_response_diversity +
+             a * c +
+             redundancy_prop +
+             redundancy_count +
+             redundancy_score,
+           data = gaussian_varied_n50_stats))
+
+summary(lm(log(resilience) ~ w_response_diversity +
+             a * c +
+             evenness +
+             coverage_prop +
+             min_spacing +
+             skew_spacing +
+             redundancy_prop +
+             redundancy_score,
+           data = gaussian_varied_n50_stats))
+
+summary(lm(log(resilience) ~ w_response_diversity + a * c +
+     redundancy_score * c,
+   data = gaussian_varied_n50_stats))
+
+summary(lm(log(resilience) ~ w_response_diversity * evenness + a * c, data = gaussian_varied_n50_stats))
+
 
 ## log(resilience) ~ URD ------------
 summary(lm(log(resilience) ~ uw_response_diversity, data = linear_small_int_stats))

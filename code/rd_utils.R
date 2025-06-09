@@ -227,7 +227,9 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
                    abundance_slope = models$abundance_slope[i],
                    abundance_intercept = models$abundance_intercept[i],
                    abundance = curr_abundance,
-                   funct = curr_function)
+                   funct = curr_function,
+                   function_slope = models$function_slope[i],
+                   function_intercept = models$function_intercept[i])
       } else {
         data.frame(E = E,
                    species_ID = models$species_ID[i],
@@ -235,7 +237,9 @@ run_one_sim <- function(n_species, environment_vals, params_ranges, response_sha
                    b = models$b[i],
                    c = models$c[i],
                    abundance = curr_abundance,
-                   funct = curr_function)
+                   funct = curr_function,
+                   function_slope = models$function_slope[i],
+                   function_intercept = models$function_intercept[i])
       }
     }))
   }))
@@ -259,13 +263,17 @@ weighted_rd <- function(df, response_shape){
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), slope = median(abundance_slope)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance, normwt=TRUE)/mean(abs(slope)))
+      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance, normwt=TRUE)/mean(abs(slope)),
+                tolerance = mean(1/abs(slope)))
   } else if(response_shape == 'gaussian'){
     rd <- df %>%
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance, normwt=TRUE)/mean(b))
+      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance, normwt=TRUE)/mean(b),
+                tolerance = mean(c/a),
+                a = mean(a),
+                c = mean(c))
   } else {
     print("response shape must be either 'linear' or 'gaussian'.")
     return(NULL)
@@ -302,34 +310,120 @@ resilience <- function(df){
               total_function = mean(total_function))
 }
 
-calc_stats <- function(df, response_shape){
-  if(response_shape == 'linear'){
-    # weighted RD
-    wrd <- weighted_rd(df, 'linear')
-    # unweighted RD
-    urd <- unweighted_rd(df, 'linear')
-    # resilience and total function
-    res <- resilience(df)
-    # join all together
-    stats <- wrd %>%
-      left_join(urd) %>%
-      left_join(res)
-  } else if(response_shape == 'gaussian'){
-    # weighted RD
-    wrd <- weighted_rd(df, 'gaussian')
-    # unweighted RD
-    urd <- unweighted_rd(df, 'gaussian')
-    # resilience and total function
-    res <- resilience(df)
-    # join all together
-    stats <- wrd %>%
-      left_join(urd) %>%
-      left_join(res)
-  } else {
-    print("response shape must be either 'linear' or 'gaussian'.")
-    return(NULL)
+calc_evenness <- function(df, response_shape, env_range = c(0, 100), redundancy_thresh = 5) {
+  if (response_shape != 'gaussian') {
+    return(tibble(
+      sim_number = unique(df$sim_number),
+      evenness = NA_real_,
+      range_b = NA_real_,
+      coverage_prop = NA_real_,
+      min_spacing = NA_real_,
+      skew_spacing = NA_real_,
+      redundancy_prop = NA_real_,
+      redundancy_count = NA_real_,
+      redundancy_score = NA_real_
+    ))
   }
+  
+  df %>%
+    group_by(sim_number, species_ID) %>%
+    summarize(b = median(b), .groups = "drop") %>%
+    group_by(sim_number) %>%
+    arrange(b, .by_group = TRUE) %>%
+    summarize(
+      spacings = list(diff(b)),
+      range_b = max(b) - min(b),
+      coverage_prop = (max(b) - min(b)) / (env_range[2] - env_range[1]),
+      evenness = {
+        sp <- spacings[[1]]
+        if (length(sp) > 1) {
+          cv <- sd(sp) / mean(sp)
+          1 / (1 + cv)
+        } else NA_real_
+      },
+      min_spacing = ifelse(length(spacings[[1]]) > 0, min(spacings[[1]]), NA_real_),
+      skew_spacing = ifelse(length(spacings[[1]]) > 2, e1071::skewness(spacings[[1]]), NA_real_),
+      redundancy_count = sum(spacings[[1]] < redundancy_thresh),
+      redundancy_prop = sum(spacings[[1]] < redundancy_thresh) / max(1, length(spacings[[1]])),
+      redundancy_score = mean(1 / spacings[[1]]),
+      .groups = "drop"
+    )
 }
+
+calc_function_map_stats <- function(df) {
+  df %>%
+    group_by(sim_number, species_ID) %>%
+    summarize(f_slope = median(function_slope), f_intercept = median(function_intercept), .groups = "drop") %>%
+    group_by(sim_number) %>%
+    summarize(
+      mean_f_slope = mean(f_slope),
+      sd_f_slope   = sd(f_slope),
+      mean_f_intercept = mean(f_intercept),
+      sd_f_intercept   = sd(f_intercept),
+      slope_range = max(f_slope) - min(f_slope)
+    )
+}
+
+
+# calc_stats <- function(df, response_shape){
+#   if(response_shape == 'linear'){
+#     # weighted RD
+#     wrd <- weighted_rd(df, 'linear')
+#     # unweighted RD
+#     urd <- unweighted_rd(df, 'linear')
+#     # resilience and total function
+#     res <- resilience(df)
+#     # join all together
+#     stats <- wrd %>%
+#       left_join(urd) %>%
+#       left_join(res)
+#   } else if(response_shape == 'gaussian'){
+#     # weighted RD
+#     wrd <- weighted_rd(df, 'gaussian')
+#     # unweighted RD
+#     urd <- unweighted_rd(df, 'gaussian')
+#     # resilience and total function
+#     res <- resilience(df)
+#     # evenness
+#     even <- evenness(df)
+#     # join all together
+#     stats <- wrd %>%
+#       left_join(urd) %>%
+#       left_join(res) %>%
+#       left_join(even)
+#   } else {
+#     print("response shape must be either 'linear' or 'gaussian'.")
+#     return(NULL)
+#   }
+# }
+
+calc_stats <- function(df, response_shape, env_range = c(0, 100), redundancy_thresh = 5) {
+  if (!response_shape %in% c("linear", "gaussian")) {
+    stop("response_shape must be either 'linear' or 'gaussian'.")
+  }
+  
+  wrd <- weighted_rd(df, response_shape)
+  urd <- unweighted_rd(df, response_shape)
+  res <- resilience(df)
+  
+  # For gaussian, include evenness + redundancy metrics
+  even <- if (response_shape == "gaussian") {
+    calc_evenness(df, response_shape, env_range = env_range, redundancy_thresh = redundancy_thresh)
+  } else {
+    tibble(sim_number = unique(df$sim_number))  # placeholder to join cleanly
+  }
+  
+  fmap <- calc_function_map_stats(df)
+  
+  stats <- wrd %>%
+    left_join(urd, by = "sim_number") %>%
+    left_join(res, by = "sim_number") %>%
+    left_join(even, by = "sim_number") %>%
+    left_join(fmap, by = "sim_number")
+  
+  return(stats)
+}
+
 
 # functions to make plots
 abundance_environment_plot <- function(df){
