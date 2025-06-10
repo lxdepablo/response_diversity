@@ -332,7 +332,9 @@ ggplot(data = optima, aes(x = precip_optimum)) +
 # summarize fits
 fits_summary <- temperature_fits %>%
   group_by(species) %>%
-  summarize(max_temp_optimum = mean(b))
+  summarize(max_temp_optimum = mean(b),
+            mean_a = mean(a),
+            mean_c = mean(c))
 
 # visualize optima from curves next to weighted means
 ggplot() +
@@ -376,7 +378,9 @@ response_diversity <- biomass_clim %>%
   # calculate response diversity as weighted variance in optima, where weights are mean biomass of each species
   group_by(plot) %>%
   summarize(response_diversity = Hmisc::wtd.var(max_temp_optimum, mean_biomass_g_m2)/mean(max_temp_optimum, na.rm=TRUE),
-            total_function = sum(mean_biomass_g_m2))
+            total_function = sum(mean_biomass_g_m2),
+            mean_a = mean(mean_a, na.rm=TRUE),
+            mean_c = mean(mean_c, na.rm=TRUE))
 
 # bring together stability and RD for each plot
 stab_rd <- stability %>%
@@ -432,7 +436,7 @@ model_norm <- lm(log_stab ~ rd_z*tf_z
                  data = stab_rd)
 summary(model_norm)
 
-simple_model <- lm(log_stab ~ rd_norm + richness_norm,
+simple_model <- lm(log_stab ~ response_diversity + richness + mean_a * mean_c,
                    data = stab_rd)
 summary(simple_model)
 
