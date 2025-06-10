@@ -611,7 +611,14 @@ summary(lm(log(resilience) ~ w_response_diversity + a*c, data = gaussian_varied_
 summary(lm(log(resilience) ~ w_response_diversity + a*c, data = gaussian_varied_n50_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a*c + coverage_prop, data = gaussian_constant_stats))
 
-summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope + evenness + coverage_prop, data = gaussian_varied_n10_stats))
+total_model <- lm(log(resilience) ~ w_response_diversity
+           + a * c
+           + mean_f_slope
+           + sd_f_slope
+           + evenness,
+           data = gaussian_varied_n10_stats)
+summary(total_model)
+car::vif(total_model, type = "predictor")
 
 summary(lm(log(resilience) ~ w_response_diversity +
              a * c +
