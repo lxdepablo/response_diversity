@@ -266,6 +266,7 @@ optima <- biomass_clim %>%
 # prep data for fitting response curves
 response_curve_df <- biomass_clim %>%
   # use only monoculture data
+  # num_sp is planted richness and sp_num is observed richness
   filter(num_sp == 1,
          # only fit curves for planted species
          planted == 1) %>%
@@ -273,10 +274,6 @@ response_curve_df <- biomass_clim %>%
   mutate(day_of_year = yday(mdy(date)))
 
 # fit response curves for each species
-temperature_fits <- bind_rows(lapply(unique(response_curve_df$species),
-                                     fit_response_curve,
-                                     df = response_curve_df))
-
 temperature_fits <- response_curve_df %>%
   # make one tibble per species
   nest(data = -species) %>% 
@@ -315,19 +312,6 @@ ggplot(data = curr_sp, aes(x = mean_max_temp, y = biomass_g_m2)) +
         legend.text = element_text(size = 20),
         legend.title = element_text(size = 25),
         panel.grid = element_blank())
-
-# check how many pancake-shaped curves there are
-diagnostics <- temperature_fits %>% 
-  distinct(species, a, b, c) %>% 
-  mutate(span      = map_dbl(species, ~ diff(range(response_curve_df$mean_max_temp[response_curve_df$species == .x]))),
-         flat_flag = c > 0.5 * span)
-table(diagnostics$flat_flag)
-
-# visualize optima weighted means
-ggplot(data = optima, aes(x = max_temp_optimum)) +
-  geom_histogram()
-ggplot(data = optima, aes(x = precip_optimum)) +
-  geom_histogram()
 
 # summarize fits
 fits_summary <- temperature_fits %>%
@@ -418,34 +402,16 @@ cc_fig3 <- ggplot(data = stab_rd, aes(x = response_diversity, y = log(stability)
         legend.title = element_text(size = 25))
 
 # build models
-model <- lm(log(stability) ~ response_diversity*total_function
-            + richness
-            + phosphorus
-            + no2no3
-            + nh4
-            + nitrogen,
-            data = stab_rd)
+model <- lm(log_stab ~ response_diversity + richness + mean_a * mean_c,
+                   data = stab_rd)
 summary(model)
 
-model_norm <- lm(log_stab ~ rd_z*tf_z
-                 + richness_z
-                 + phosphorus
-                 + no2no3
-                 + nh4
-                 + nitrogen,
-                 data = stab_rd)
-summary(model_norm)
-
-simple_model <- lm(log_stab ~ response_diversity + richness + mean_a * mean_c,
-                   data = stab_rd)
-summary(simple_model)
-
-partials <- plot_model(simple_model, type = "pred")
+partials <- plot_model(model, type = "pred")
 plot_grid(partials[[1]], partials[[2]], nrow = 2)
 partials[[1]]
 
 # make partial regression with ggplot for pretty figures
-pred_rd <- ggpredict(simple_model, terms = "rd_norm")
+pred_rd <- ggpredict(model, terms = "rd_norm")
 plot(pred_rd)
 
 # plot marginal effects
@@ -468,19 +434,19 @@ ggplot() +
 library(lmtest)
 
 # run Breusch-Pagan test, p < 0.05 means there's heteroskedasticity
-bptest(simple_model)
+bptest(model)
 
 # calculate more robust standard erros
 library(sandwich)
 
 # robust standard errors (Huber-White)
-coeftest(model_norm, vcov = vcovHC(model_norm, type = "HC1"))
+coeftest(model, vcov = vcovHC(model_norm, type = "HC1"))
 
 # check for unobserved confounders
 library(sensemakr)
 
-sense <- sensemakr(model = model_norm, 
-                   treatment = "rd_norm", 
+sense <- sensemakr(model = model, 
+                   treatment = "response_diversity", 
                    benchmark_covariates = NULL, 
                    kd = 1)
 
