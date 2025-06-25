@@ -175,184 +175,11 @@ crossing_summary <- data.frame(case = c("small_slope", "large_slope", "rand_slop
                                               sd(crossing_large_slope_results$abundance_slope),
                                               sd(crossing_rand_slope_results$abundance_slope)))
 
-## collate all cases for boxplots --------
-# add case column
-linear_cases <- list(linear_small_int_results = linear_small_int_results, 
-                     linear_mid_int_results = linear_mid_int_results, 
-                     linear_large_int_results = linear_large_int_results, 
-                     linear_rand_int_results = linear_rand_int_results, 
-                     linear_rand_int_n50_results = linear_rand_int_n50_results)
-
-all_linears <- bind_rows(lapply(names(linear_cases), function(x) {
-  df <- linear_cases[[x]]
-  df$case <- x
-  df
-}))
-
-gaussian_cases <- list(gaussian_constant_results = gaussian_constant_results, 
-                       gaussian_varied_n10_results = gaussian_varied_n10_results, 
-                       gaussian_varied_n50_results = gaussian_varied_n50_results)
-
-all_gaussians <- bind_rows(lapply(names(gaussian_cases), function(x) {
-  df <- gaussian_cases[[x]]
-  df$case <- x
-  df
-}))
-
-crossing_cases <- list(crossing_small_slope_results = crossing_small_slope_results, 
-                       crossing_large_slope_results = crossing_large_slope_results, 
-                       crossing_rand_slope_results = crossing_rand_slope_results)
-
-all_crossings <- bind_rows(lapply(names(crossing_cases), function(x) {
-  df <- crossing_cases[[x]]
-  df$case <- x
-  df
-}))
-
-# species removal experiment -----------
-# pick a random value for environment
-e_val <- sample(unique(gaussian_varied_n10_results$E), 1)
-# remove the rarest species from each ecosystem
-rarest_removed <- do.call(rbind, lapply(unique(gaussian_varied_n10_results$sim_number), function(n){
-  # filter for current ecosystem
-  curr_sim <- gaussian_varied_n10_results %>%
-    filter(sim_number == n)
-  
-  # identify rarest species at given value of E
-  curr_E <- curr_sim %>%
-    filter(E == e_val)
-  
-  rarest_sp <- curr_E[which.min(curr_E$abundance), "species_ID"][[1]]
-  
-  # remove rarest species
-  rarest_removed <- curr_sim %>%
-    filter(species_ID != rarest_sp)
-}))
-# remove the most common species from each ecosystem
-common_removed <- do.call(rbind, lapply(unique(gaussian_varied_n10_results$sim_number), function(n){
-  # filter for current ecosystem
-  curr_sim <- gaussian_varied_n10_results %>%
-    filter(sim_number == n)
-  
-  # identify rarest species at given value of E
-  curr_E <- curr_sim %>%
-    filter(E == e_val)
-  
-  common_sp <- curr_E[which.max(curr_E$abundance), "species_ID"][[1]]
-  
-  # remove rarest species
-  common_removed <- curr_sim %>%
-    filter(species_ID != common_sp)
-}))
-# remove a random species from each ecosystem
-rand_removed <- do.call(rbind, lapply(unique(gaussian_varied_n10_results$sim_number), function(n){
-  # filter for current ecosystem
-  curr_sim <- gaussian_varied_n10_results %>%
-    filter(sim_number == n)
-  
-  # pick a random species
-  rand_sp <- sample(unique(curr_sim$species_ID), 1)
-  
-  # remove rarest species
-  rarest_removed <- curr_sim %>%
-    filter(species_ID != rand_sp)
-}))
-
-# get pre-removal stats
-pre_removal_stats <- gaussian_varied_n10_stats %>%
-  rename_with(
-    ~ paste0("pr_", .x))
-
-# calculate stats
-rarest_removed_stats <- calc_stats(rarest_removed, 'gaussian') %>%
-  left_join(pre_removal_stats, by = c("sim_number" = "pr_sim_number")) %>%
-  mutate(delta_wrd = w_response_diversity - pr_w_response_diversity,
-         delta_urd = w_response_diversity - pr_w_response_diversity,
-         delta_resilience = resilience - pr_resilience,
-         delta_tf = total_function - pr_total_function,
-         removal = "rarest")
-common_removed_stats <- calc_stats(common_removed, 'gaussian') %>%
-  left_join(pre_removal_stats, by = c("sim_number" = "pr_sim_number")) %>%
-  mutate(delta_wrd = w_response_diversity - pr_w_response_diversity,
-         delta_urd = w_response_diversity - pr_w_response_diversity,
-         delta_resilience = resilience - pr_resilience,
-         delta_tf = total_function - pr_total_function,
-         removal = "most_common")
-rand_removed_stats <- calc_stats(rand_removed, 'gaussian') %>%
-  left_join(pre_removal_stats, by = c("sim_number" = "pr_sim_number")) %>%
-  mutate(delta_wrd = w_response_diversity - pr_w_response_diversity,
-         delta_urd = w_response_diversity - pr_w_response_diversity,
-         delta_resilience = resilience - pr_resilience,
-         delta_tf = total_function - pr_total_function,
-         removal = "random")
-
-species_removal_stats <- rarest_removed_stats %>%
-  rbind(common_removed_stats) %>%
-  rbind(rand_removed_stats)
-
-# compare treatments
-wrd_aov <- aov(delta_wrd ~ removal,
-               data = species_removal_stats)
-res_aov <- aov(delta_resilience ~ removal,
-               data = species_removal_stats)
-tf_aov <- aov(delta_tf ~ removal,
-              data = species_removal_stats)
-
-summary(wrd_aov)
-summary(res_aov)
-summary(tf_aov)
-
-# make plots -----------
-
-# species removal comparison
-ggplot(data = species_removal_stats, aes(x = removal, y = delta_wrd)) +
-  geom_boxplot() +
-  labs(x = "Species Removed", y = "\u0394 Weighted Response Diversity") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 20),
-        axis.title = element_text(size = 25),
-        legend.text = element_text(size = 20),
-        legend.title = element_text(size = 25),
-        panel.grid = element_blank())
-ggplot(data = species_removal_stats, aes(x = removal, y = delta_resilience)) +
-  geom_boxplot() +
-  labs(x = "Species Removed", y = "\u0394 Resilience") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 20),
-        axis.title = element_text(size = 25),
-        legend.text = element_text(size = 20),
-        legend.title = element_text(size = 25),
-        panel.grid = element_blank())
-ggplot(data = species_removal_stats, aes(x = removal, y = delta_tf)) +
-  geom_boxplot() +
-  labs(x = "Species Removed", y = "\u0394 Total Function") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 20),
-        axis.title = element_text(size = 25),
-        legend.text = element_text(size = 20),
-        legend.title = element_text(size = 25),
-        panel.grid = element_blank())
-
-# summary stats figs ----------
-# linear cases
-ggplot(data = all_linears, aes(x = case, y = abundance_intercept)) +
-  geom_boxplot()
-# gaussian cases
-ggplot(data = all_gaussians, aes(x = case, y = a)) +
-  geom_boxplot()
-ggplot(data = all_gaussians, aes(x = case, y = c)) +
-  geom_boxplot()
-# crossing cases
-ggplot(data = all_crossings, aes(x = case, y = abs(abundance_slope))) +
-  geom_boxplot()
-ggplot(data = all_crossings, aes(x = case, y = abundance_intercept)) +
-  geom_boxplot()
-
 # Fig S1. -----------
 p_contribute_plot(p_contribute_n10_stats)
 p_contribute_plot(p_contribute_n50_stats)
 
-# Fig 1, abundance vs environment ------------
+# Fig S?, abundance vs environment ------------
 abundance_environment_plot(linear_small_int_results)
 abundance_environment_plot(linear_large_int_results)
 abundance_environment_plot(linear_rand_int_results)
@@ -375,7 +202,7 @@ plot_grid(ae1, ae2, ae3, labels = c("Linear", "Gaussian", "Crossing"),
           rel_widths = c(3, 3, 4),
           label_size = 20)
 
-# Fig 2, function vs abundance ----------
+# Fig S?, function vs abundance ----------
 function_abundance_plot(linear_small_int_results)
 function_abundance_plot(linear_large_int_results)
 function_abundance_plot(linear_rand_int_results)
@@ -383,7 +210,7 @@ function_abundance_plot(gaussian_varied_n10_results)
 function_abundance_plot(gaussian_varied_n50_results)
 function_abundance_plot(crossing_small_slope_results)
 
-# Fig 3, total function vs environment
+# Fig S?, total function vs environment -----
 total_function_environment_plot(linear_small_int_results)
 total_function_environment_plot(linear_large_int_results)
 total_function_environment_plot(crossing_large_slope_results)
@@ -395,39 +222,10 @@ tf2 <- total_function_environment_plot(gaussian_varied_n10_results) +
 tf3 <- total_function_environment_plot(crossing_rand_slope_results) +
   labs(y = "")
 
-plot_grid(tf1, tf2, tf3, labels = c("Linear", "Gaussian", "Crossing"), nrow = 1, hjust = -1.7, vjust = 2, label_size = 20, rel_widths = c(3, 3, 4.5))
+plot_grid(tf1, tf2, tf3, labels = c("Linear", "Gaussian", "Crossing"),
+          nrow = 1, hjust = -1.7, vjust = 2, label_size = 20, rel_widths = c(3, 3, 4.5))
 
-# Fig 4, resilience vs mean weighted response diversity
-resilience_w_rd_plot(linear_small_int_stats)
-resilience_w_rd_plot(linear_large_int_stats)
-resilience_w_rd_plot(linear_rand_int_stats)
-resilience_w_rd_plot(gaussian_varied_n10_stats)
-resilience_w_rd_plot(gaussian_varied_n50_stats)
-resilience_w_rd_plot(crossing_small_slope_stats)
-
-# Fig ?, resilience vs unweighted RD
-resilience_u_rd_plot(linear_small_int_stats)
-resilience_u_rd_plot(linear_large_int_stats)
-resilience_u_rd_plot(linear_rand_int_stats)
-resilience_u_rd_plot(gaussian_varied_n10_stats)
-resilience_u_rd_plot(gaussian_varied_n50_stats)
-
-# Fig ?, total function vs mean weighted RD
-function_w_rd_plot(linear_small_int_stats)
-function_w_rd_plot(linear_large_int_stats)
-function_w_rd_plot(linear_rand_int_stats)
-function_w_rd_plot(gaussian_varied_n10_stats)
-function_w_rd_plot(gaussian_varied_n50_stats)
-function_w_rd_plot(crossing_large_slope_stats)
-
-# Fig ?, total function vs unweighted RD
-function_u_rd_plot(linear_small_int_stats)
-function_u_rd_plot(linear_large_int_stats)
-function_u_rd_plot(linear_rand_int_stats)
-function_u_rd_plot(gaussian_varied_n10_stats)
-function_u_rd_plot(gaussian_varied_n50_stats)
-
-# Fig ?, resilience vs mean weighted RD vs total function
+# Fig 2, resilience vs mean weighted RD -------
 rfw1 <- resilience_w_rd_plot(linear_small_int_stats) +
   labs(y = "", x = "")
 rfw2 <- resilience_w_rd_plot(linear_mid_int_stats) +
@@ -529,7 +327,7 @@ fig2_full <- plot_grid(fig2_plots_ylab, fig2_xlab,
                        nrow = 2,
                        rel_heights = c(0.96, 0.04))
 
-# Fig 3
+# Fig ? -----
 ggplot(data = gaussian_varied_n50_stats, aes(x = normalize(w_response_diversity, method = "range"), y = log(resilience), col = log(tolerance))) +
   geom_point(alpha=0.3, size = 5) +
   geom_smooth(method = "lm") +
@@ -542,27 +340,7 @@ ggplot(data = gaussian_varied_n50_stats, aes(x = normalize(w_response_diversity,
         legend.text = element_text(size = 20),
         legend.title = element_text(size = 25))
 
-ggplot(data = gaussian_varied_n10_stats, aes(x = tolerance)) +
-  geom_histogram()
-
-
-# Fig ?, resilience vs unweighted RD vs total function
-rfu1 <- resilience_function_u_rd_plot(linear_small_int_stats) +
-  labs(x = "")
-rfu2 <-resilience_function_u_rd_plot(linear_large_int_stats) +
-  labs(x = "", y = "")
-rfu3 <-resilience_function_u_rd_plot(linear_rand_int_stats) +
-  labs(y = "")
-rfu4 <-resilience_function_u_rd_plot(gaussian_varied_n10_stats)
-rfu5 <-resilience_function_u_rd_plot(gaussian_varied_n50_stats) +
-  labs(y = "")
-
-plot_grid(rfu1, rfu2, rfu3, rfu4, rfu5, labels = c("Linear Small Intercept",
-                                                   "Linear Large Intercept",
-                                                   "Linear Random Intercept",
-                                                   "Gaussian 10 Species",
-                                                   "Gaussian 50 Species"))
-
+# Fig ?, risk-reward plot ----
 gaussian_risk_reward <- gaussian_varied_n50_stats %>%
   mutate(rd_group = ceiling(w_response_diversity/200),
          rd_group = ifelse(rd_group >= 4, 4, rd_group),
@@ -604,13 +382,16 @@ ggplot(linear_rand_int_stats, aes(x = log(1/resilience), y = total_function, col
 
 # make models --------
 ## log(resilience) ~ WRD ----------
-summary(lm(log(resilience) ~ w_response_diversity + a + c, data = linear_small_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + tolerance, data = linear_small_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + tolerance, data = linear_mid_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + tolerance, data = linear_large_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + tolerance, data = linear_rand_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a*c, data = gaussian_varied_n10_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a*c, data = gaussian_varied_n50_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a*c + coverage_prop, data = gaussian_constant_stats))
 
+# this model includes things related to function (slope and sd)
+# including these covariates brings up the R2 quite a bit
 total_model <- lm(log(resilience) ~ w_response_diversity
            + a * c
            + mean_f_slope
@@ -618,8 +399,10 @@ total_model <- lm(log(resilience) ~ w_response_diversity
            + evenness,
            data = gaussian_varied_n10_stats)
 summary(total_model)
+# assess multicollinearity
 car::vif(total_model, type = "predictor")
 
+# these models incorporate metrics for evenness, coverage, and redundancy
 summary(lm(log(resilience) ~ w_response_diversity +
              a * c +
              tolerance +
@@ -651,27 +434,12 @@ summary(lm(log(resilience) ~ w_response_diversity + a * c +
 
 summary(lm(log(resilience) ~ w_response_diversity * evenness + a * c, data = gaussian_varied_n50_stats))
 
-
-## log(resilience) ~ URD ------------
-summary(lm(log(resilience) ~ uw_response_diversity, data = linear_small_int_stats))
-summary(lm(log(resilience) ~ uw_response_diversity, data = linear_large_int_stats))
-summary(lm(log(resilience) ~ uw_response_diversity, data = linear_rand_int_stats))
-summary(lm(log(resilience) ~ uw_response_diversity, data = gaussian_varied_n10_stats))
-summary(lm(log(resilience) ~ uw_response_diversity, data = gaussian_varied_n50_stats))
-
-## total_function ~ WRD ------------
+## total_function ~ response diversity ------------
 summary(lm(total_function ~ uw_response_diversity, data = linear_small_int_stats))
 summary(lm(total_function ~ uw_response_diversity, data = linear_large_int_stats))
 summary(lm(total_function ~ uw_response_diversity, data = linear_rand_int_stats))
 summary(lm(total_function ~ uw_response_diversity, data = gaussian_varied_n10_stats))
 summary(lm(total_function ~ uw_response_diversity, data = gaussian_varied_n50_stats))
-
-## total_function ~ URD ------------
-summary(lm(total_function ~ w_response_diversity, data = linear_small_int_stats))
-summary(lm(total_function ~ w_response_diversity, data = linear_large_int_stats))
-summary(lm(total_function ~ w_response_diversity, data = linear_rand_int_stats))
-summary(lm(total_function ~ w_response_diversity, data = gaussian_varied_n10_stats))
-summary(lm(total_function ~ w_response_diversity, data = gaussian_varied_n50_stats))
 
 ## total_function ~ stability -------------
 summary(lm(total_function ~ log(resilience), data = linear_small_int_stats))
@@ -702,14 +470,3 @@ summary(lm(log(resilience) ~ total_function * w_response_diversity, data = cross
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_varied_n10_stats))
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_varied_n50_stats))
 summary(lm(log(resilience) ~ total_function * w_response_diversity, data = gaussian_constant_stats))
-
-
-## rescale variables to study interaction ------------
-gaussian_n10_rescaled <- gaussian_varied_n10_stats %>%
-  mutate(total_function_scaled = scale(total_function)[,1],
-         log_resilience_scaled = scale(log(resilience))[,1],
-         rd_scaled = scale(w_response_diversity)[,1])
-
-summary(lm(log_resilience_scaled ~ total_function_scaled * rd_scaled, data = gaussian_n10_rescaled))
-
-

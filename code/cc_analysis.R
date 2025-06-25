@@ -254,7 +254,10 @@ ggplot(data = filter(climate_clean, date %in% seq(mdy("01-01-1990"), mdy("01-01-
   theme_classic()
 
 
-# calculate temp and precip optimum for each species
+# calculate temp and precip optimum for each species using weighted mean
+# note: we don't use these optima in the analysis anymore since we have
+#    better ones from fitting the response curves. these are used as a
+#    comparison to assess our new optima from the curves.
 optima <- biomass_clim %>%
   filter(num_sp == 1,
          planted == 1) %>%
