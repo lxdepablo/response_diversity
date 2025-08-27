@@ -346,9 +346,6 @@ stability <- biomass_clim %>%
   summarize(stability = 1/var(total_function)/mean(total_function),
             richness = mean(richness))
 
-ggplot(data = stab_rd, aes(x = richness)) +
-  geom_histogram()
-
 # calculate response diversity
 response_diversity <- biomass_clim %>%
   # exclude monocultures
@@ -381,6 +378,9 @@ stab_rd <- stability %>%
     tf_norm = normalize(total_function, method = "range")
   ) %>%
   drop_na()
+
+# write regression-ready data
+write_csv(stab_rd, "../data/stability_response_diversity.csv")
 
 # visualize data
 ggplot(data = stab_rd, aes(x = response_diversity, y = log(stability), col = total_function, size = richness)) +
