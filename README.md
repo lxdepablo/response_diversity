@@ -2,7 +2,7 @@
 Simulation and analysis code for studying the relationship between response diversity and stability of ecosystem function. Code relating response diversity to stability in simulated ecosystems is [here](https://github.com/lxdepablo/response_diversity/blob/main/code/rd_analysis.R), and code to study this same relationship in empirical data from the Cedar Creek LTER is [here](https://github.com/lxdepablo/response_diversity/blob/main/code/cc_analysis.R).
 
 # Data Access
-Data for the Cedar Creek LTER analysis is available [here](https://drive.google.com/drive/folders/1hzzEOYPQBuKaX8O1fMiJQCU_BNPjVkbe?usp=sharing) or on the [Cedar Creek LTER website](https://cedarcreek.umn.edu/research/data).
+Raw data for the Cedar Creek LTER analysis is available [here](https://drive.google.com/drive/folders/1hzzEOYPQBuKaX8O1fMiJQCU_BNPjVkbe?usp=sharing) or on the [Cedar Creek LTER website](https://cedarcreek.umn.edu/research/data). These data can be processed using [this script](https://github.com/lxdepablo/response_diversity/blob/main/code/cc_data_wrangling.R).
 Data for the simulated analysis can be generated using the provided [simulation code](https://github.com/lxdepablo/response_diversity/blob/main/code/generate_data.R). This script is computationally intensive, so it is set up to run in parallel on 64 CPUs on CU Boulder's Alpine Computing Cluster using this [sbatch script](https://github.com/lxdepablo/response_diversity/blob/main/code/generate_data_sbatch.sh). A pre-generated copy of the simulated data is also available by request to the author.
 
 # Authorship and Licensing
