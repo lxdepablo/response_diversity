@@ -264,7 +264,8 @@ weighted_rd <- function(df, response_shape){
       summarize(mean_abundance = mean(abundance), slope = median(abundance_slope)) %>%
       group_by(sim_number) %>%
       summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance, normwt=TRUE)/mean(abs(slope)),
-                tolerance = mean(1/abs(slope)))
+                tolerance = mean(1/abs(slope)),
+                mean_response = mean(abs(slope)))
   } else if(response_shape == 'gaussian'){
     rd <- df %>%
       group_by(sim_number, species_ID) %>%
