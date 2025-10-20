@@ -320,8 +320,7 @@ fig2_ylab <- get_plot_component(ggplot() +
 fig2_plots_ylab <- plot_grid(fig2_ylab,
                              linear_plots_title,
                              gaussian_plots_title,
-                             crossing_plots_title,
-                             ncol = 4,
+                             ncol = 3,
                              rel_widths = c(0.04, 0.48, 0.24, 0.24))
 fig2_full <- plot_grid(fig2_plots_ylab, fig2_xlab,
                        nrow = 2,
@@ -432,7 +431,15 @@ summary(lm(log(resilience) ~ w_response_diversity + a * c +
      redundancy_score * c,
    data = gaussian_varied_n50_stats))
 
-summary(lm(log(resilience) ~ w_response_diversity * evenness + a * c, data = gaussian_varied_n50_stats))
+## includes tolerance (gaussian) and mean response (linear), plus function mean slope and sd (should i remove these? DAG) ----
+summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_small_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_mid_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_large_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_rand_int_stats))
+summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_rand_int_n50_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_constant_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_varied_n10_stats))
+summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_varied_n50_stats))
 
 ## total_function ~ response diversity ------------
 summary(lm(total_function ~ uw_response_diversity, data = linear_small_int_stats))

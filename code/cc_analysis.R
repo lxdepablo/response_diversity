@@ -414,7 +414,7 @@ plot_grid(partials[[1]], partials[[2]], nrow = 2)
 partials[[1]]
 
 # make partial regression with ggplot for pretty figures
-pred_rd <- ggpredict(model, terms = "rd_norm")
+pred_rd <- ggpredict(model, terms = "response_diversity")
 plot(pred_rd)
 
 # plot marginal effects
@@ -425,7 +425,7 @@ ggplot() +
   geom_line(data = pred_rd, aes(x = x, y = predicted), color = "blue", size = 1) +
   # confidence ribbon
   geom_ribbon(data = pred_rd, aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  labs(x = "Normalized Response Diversity", y = "log(Functional Stability)", title = "Cedar Creek") +
+  labs(x = "Response Diversity", y = "log(Functional Stability)", title = "") +
   theme_bw() +
   theme(panel.grid = element_blank(),
       axis.text = element_text(size = 20),
@@ -443,7 +443,7 @@ bptest(model)
 library(sandwich)
 
 # robust standard errors (Huber-White)
-coeftest(model, vcov = vcovHC(model_norm, type = "HC1"))
+coeftest(model, vcov = vcovHC(model, type = "HC1"))
 
 # check for unobserved confounders
 library(sensemakr)
