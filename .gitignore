@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 data/**/*.csv
 data/*.csv
 data/**/*.txt
 data/*.txt
 vis
+=======
+data/**/*.csv
+data/*.csv
+>>>>>>> 668e8cb5b0b315e584f9206ee57f97c3f8472842
