@@ -66,10 +66,10 @@ crossing_rand_slope_results <- crossing_rand_slope_results %>%
 # get all values for p
 p_vec <- unique(p_contribute_linear_n10_results$p)
 # generate models for each value and pull out model stats
-p_contribute_linear_n10_stats <- get_p_contribute_stats(p_contribute_linear_n10_results)
-p_contribute_linear_n50_stats <- get_p_contribute_stats(p_contribute_linear_n50_results)
-p_contribute_gaussian_n10_stats <- get_p_contribute_stats(p_contribute_gaussian_n10_results)
-p_contribute_gaussian_n50_stats <- get_p_contribute_stats(p_contribute_gaussian_n50_results)
+p_contribute_linear_n10_stats <- get_p_contribute_stats(p_contribute_linear_n10_results, "linear")
+p_contribute_linear_n50_stats <- get_p_contribute_stats(p_contribute_linear_n50_results, "linear")
+p_contribute_gaussian_n10_stats <- get_p_contribute_stats(p_contribute_gaussian_n10_results, "gaussian")
+p_contribute_gaussian_n50_stats <- get_p_contribute_stats(p_contribute_gaussian_n50_results, "gaussian")
 
 # linear response shape ---------
 # intercept constant and small
@@ -422,7 +422,7 @@ summary(lm(log(resilience) ~ w_response_diversity + a * c +
      redundancy_score * c,
    data = gaussian_varied_n50_stats))
 
-## includes tolerance (gaussian) and mean response (linear), plus function mean slope and sd (should i remove these? DAG) ----
+## includes tolerance (gaussian) and mean response (linear), plus function mean slope and sd ----
 summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_small_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_mid_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_large_int_stats))
@@ -431,13 +431,6 @@ summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope
 summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_constant_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_varied_n10_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_varied_n50_stats))
-
-## total_function ~ response diversity ------------
-summary(lm(total_function ~ uw_response_diversity, data = linear_small_int_stats))
-summary(lm(total_function ~ uw_response_diversity, data = linear_large_int_stats))
-summary(lm(total_function ~ uw_response_diversity, data = linear_rand_int_stats))
-summary(lm(total_function ~ uw_response_diversity, data = gaussian_varied_n10_stats))
-summary(lm(total_function ~ uw_response_diversity, data = gaussian_varied_n50_stats))
 
 ## total_function ~ stability -------------
 summary(lm(total_function ~ log(resilience), data = linear_small_int_stats))
