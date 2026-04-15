@@ -14,8 +14,11 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source("rd_utils.R")
 
 # load data ------------
-p_contribute_n10_results <- read_csv("../data/sim_data/p_contribute_n10.csv")
-p_contribute_n50_results <- read_csv("../data/sim_data/p_contribute_n50.csv")
+p_contribute_linear_n10_results <- read_csv("../data/sim_data/p_contribute_linear_n10.csv")
+p_contribute_linear_n50_results <- read_csv("../data/sim_data/p_contribute_linear_n50.csv")
+
+p_contribute_gaussian_n10_results <- read_csv("../data/sim_data/p_contribute_gaussian_n10.csv")
+p_contribute_gaussian_n50_results <- read_csv("../data/sim_data/p_contribute_gaussian_n50.csv")
 
 linear_small_int_results <- read_csv("../data/sim_data/linear_small_int_results.csv")
 linear_mid_int_results <- read_csv("../data/sim_data/linear_mid_int_results.csv")
@@ -61,41 +64,12 @@ crossing_rand_slope_results <- crossing_rand_slope_results %>%
 
 ## proportion contribute sensitivity analysis ---------
 # get all values for p
-p_vec <- unique(p_contribute_n10_results$p)
+p_vec <- unique(p_contribute_linear_n10_results$p)
 # generate models for each value and pull out model stats
-p_contribute_n10_stats <- do.call(rbind, lapply(p_vec, function(curr_p){
-  # subset data for current value of p
-  curr_p_data <- dplyr::filter(p_contribute_n10_results, p == curr_p) %>%
-    filter(resilience != Inf)
-  
-  # build model
-  curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity, data = curr_p_data)
-  
-  conf_int <- confint(curr_model, 'mean_weighted_response_diversity', level=0.95)
-
-  p_val <- summary(curr_model)$coefficients[,4][[2]]
-  r_squared <- summary(curr_model)$r.squared
-  estimate <- summary(curr_model)$coefficients[,1][[2]]
-  
-  data.frame(proportion_contribute = curr_p, p_val = p_val, r_squared = r_squared, estimate = estimate, conf_lower = conf_int[[1]], conf_upper = conf_int[[2]])
-}))
-
-p_contribute_n50_stats <- do.call(rbind, lapply(p_vec, function(curr_p){
-  # subset data for current value of p
-  curr_p_data <- filter(p_contribute_n50_results, p == curr_p) %>%
-    filter(resilience != Inf)
-  
-  # build model
-  curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity, data = curr_p_data)
-  
-  conf_int <- confint(curr_model, 'mean_weighted_response_diversity', level=0.95)
-  
-  p_val <- summary(curr_model)$coefficients[,4][[2]]
-  r_squared <- summary(curr_model)$r.squared
-  estimate <- summary(curr_model)$coefficients[,1][[2]]
-  
-  data.frame(proportion_contribute = curr_p, p_val = p_val, r_squared = r_squared, estimate = estimate, conf_lower = conf_int[[1]], conf_upper = conf_int[[2]])
-}))
+p_contribute_linear_n10_stats <- get_p_contribute_stats(p_contribute_linear_n10_results, "linear")
+p_contribute_linear_n50_stats <- get_p_contribute_stats(p_contribute_linear_n50_results, "linear")
+p_contribute_gaussian_n10_stats <- get_p_contribute_stats(p_contribute_gaussian_n10_results, "gaussian")
+p_contribute_gaussian_n50_stats <- get_p_contribute_stats(p_contribute_gaussian_n50_results, "gaussian")
 
 # linear response shape ---------
 # intercept constant and small
@@ -176,8 +150,25 @@ crossing_summary <- data.frame(case = c("small_slope", "large_slope", "rand_slop
                                               sd(crossing_rand_slope_results$abundance_slope)))
 
 # Fig S1. -----------
-p_contribute_plot(p_contribute_n10_stats)
-p_contribute_plot(p_contribute_n50_stats)
+pc_l10 <- p_contribute_plot(p_contribute_linear_n10_stats) +
+  labs(x = "", y = "")
+pc_l50 <- p_contribute_plot(p_contribute_linear_n50_stats) +
+  labs(x = "", y = "")
+pc_g10 <- p_contribute_plot(p_contribute_gaussian_n10_stats) +
+  labs(x = "", y = "")
+pc_g50 <- p_contribute_plot(p_contribute_gaussian_n50_stats)
+# extract axis labels
+pc_x <- get_plot_component(pc_g50, "xlab-b")
+pc_y <- get_plot_component(pc_g50, "ylab-l")
+pc_g50 <- pc_g50 +
+  labs(x = "", y = "")
+
+plot_grid(
+  pc_y,
+  plot_grid(
+    plot_grid(
+      pc_l10, pc_l50, pc_g10, pc_g50, nrow = 2, labels = "auto", label_size = 20),
+    pc_x, ncol = 1, rel_heights = c(0.95,0.05)), ncol = 2, rel_widths = c(0.05,0.95))
 
 # Fig S?, abundance vs environment ------------
 abundance_environment_plot(linear_small_int_results)
@@ -431,7 +422,7 @@ summary(lm(log(resilience) ~ w_response_diversity + a * c +
      redundancy_score * c,
    data = gaussian_varied_n50_stats))
 
-## includes tolerance (gaussian) and mean response (linear), plus function mean slope and sd (should i remove these? DAG) ----
+## includes tolerance (gaussian) and mean response (linear), plus function mean slope and sd ----
 summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_small_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_mid_int_stats))
 summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = linear_large_int_stats))
@@ -440,13 +431,6 @@ summary(lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope
 summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_constant_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_varied_n10_stats))
 summary(lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = gaussian_varied_n50_stats))
-
-## total_function ~ response diversity ------------
-summary(lm(total_function ~ uw_response_diversity, data = linear_small_int_stats))
-summary(lm(total_function ~ uw_response_diversity, data = linear_large_int_stats))
-summary(lm(total_function ~ uw_response_diversity, data = linear_rand_int_stats))
-summary(lm(total_function ~ uw_response_diversity, data = gaussian_varied_n10_stats))
-summary(lm(total_function ~ uw_response_diversity, data = gaussian_varied_n50_stats))
 
 ## total_function ~ stability -------------
 summary(lm(total_function ~ log(resilience), data = linear_small_int_stats))
