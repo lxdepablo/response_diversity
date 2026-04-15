@@ -11,7 +11,7 @@ if(require(tidyverse)){
   }
 }
 
-num_cores <- 64
+num_cores <- 1
 
 # generate random abundance functions
 # inputs:
@@ -557,7 +557,7 @@ p_contribute_plot <- function(df){
     geom_errorbar(aes(ymin = conf_lower, ymax = conf_upper), linewidth = 2) +
     scale_color_viridis_c() +
     geom_smooth(method = "lm") +
-    labs(x = "Proportion Species Contributing to Function", y = "Estimate", title = "Sensitivity Analysis") +
+    labs(x = "Proportion Species Contributing to Function", y = "Estimate", col="P-Value") +
     theme_bw() +
     theme(axis.text = element_text(size = 20),
           axis.title = element_text(size = 25),
@@ -566,6 +566,37 @@ p_contribute_plot <- function(df){
           panel.grid = element_blank())
 }
 
+get_p_contribute_stats <- function(df, form){
+  stats <- do.call(rbind, lapply(p_vec, function(curr_p){
+    # subset data for current value of p
+    curr_p_data <- filter(df, p == curr_p) %>%
+      filter(resilience != Inf)
+    
+    # build model
+    if(form == "linear"){
+      curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = curr_p_data)
+    } else if(form == "gaussian"){
+      curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity + a * c + mean_f_slope + sd_f_slope, data = curr_p_data)
+    } else{
+      print("Form must be either 'linear' or 'gaussian'.")
+      return(NULL)
+    }
+    
+    #curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity, data = curr_p_data)
+    
+    conf_int <- confint(curr_model, 'mean_weighted_response_diversity', level=0.95)
+    
+    p_val <- summary(curr_model)$coefficients[,4][[2]]
+    r_squared <- summary(curr_model)$r.squared
+    estimate <- summary(curr_model)$coefficients[,1][[2]]
+    p_val_bin <- case_when(p_val <= 0.05 ~ "Significant",
+                           p_val > 0.10 ~ "Not significant",
+                           TRUE ~ "Marginally significant")
+    
+    data.frame(proportion_contribute = curr_p, p_val = p_val, p_val_bin = p_val_bin, r_squared = r_squared, estimate = estimate, conf_lower = conf_int[[1]], conf_upper = conf_int[[2]])
+  }))
+  return(stats)
+}
 
 
 
