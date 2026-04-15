@@ -57,11 +57,11 @@ p_contribute_gaussian_n10_results <- do.call(rbind, lapply(proportion_contribute
   curr_p <- run_n_sims(n_simulations, n_species = 10, environment_vals, p_contribute_gaussian_ranges, response_shape = 'gaussian', p_contribute = p)
 
   # calc resilience
-  resilience <- curr_p %>%
-    group_by(sim_number, E) %>%
-    summarize(total_function = sum(funct)) %>%
-    group_by(sim_number) %>%
-    summarize(resilience = 1/var(total_function))
+  # resilience <- curr_p %>%
+  #   group_by(sim_number, E) %>%
+  #   summarize(total_function = sum(funct)) %>%
+  #   group_by(sim_number) %>%
+  #   summarize(resilience = 1/var(total_function))
 
   # calc weighted response diversity
   # mean_weighted_response_diversity <- curr_p %>%
@@ -71,6 +71,8 @@ p_contribute_gaussian_n10_results <- do.call(rbind, lapply(proportion_contribute
   #   summarize(mean_weighted_response_diversity = Hmisc::wtd.var(b, mean_abundance)/mean(b),
   #             a = mean(a),
   #             c = mean(c))
+  
+  resilience <- resilience(curr_p)
   
   # get rd, a, c
   mean_weighted_response_diversity <- weighted_rd(curr_p, "gaussian")
@@ -91,12 +93,7 @@ p_contribute_gaussian_n50_results <- do.call(rbind, lapply(proportion_contribute
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 50, environment_vals, p_contribute_gaussian_ranges, response_shape = 'gaussian', p_contribute = p)
 
-  # calc resilience
-  resilience <- curr_p %>%
-    group_by(sim_number, E) %>%
-    summarize(total_function = sum(funct)) %>%
-    group_by(sim_number) %>%
-    summarize(resilience = 1/var(total_function))
+  resilience <- resilience(curr_p)
   
   # get rd, a, c
   mean_weighted_response_diversity <- weighted_rd(curr_p, "gaussian")
@@ -117,12 +114,7 @@ p_contribute_linear_n10_results <- do.call(rbind, lapply(proportion_contribute, 
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 10, environment_vals, p_contribute_linear_ranges, response_shape = 'linear', p_contribute = p)
   
-  # calc resilience
-  resilience <- curr_p %>%
-    group_by(sim_number, E) %>%
-    summarize(total_function = sum(funct)) %>%
-    group_by(sim_number) %>%
-    summarize(resilience = 1/var(total_function))
+  resilience <- resilience(curr_p)
   
   # get rd, mean slope, sd slope
   mean_weighted_response_diversity <- weighted_rd(curr_p, "linear")
@@ -143,12 +135,7 @@ p_contribute_linear_n50_results <- do.call(rbind, lapply(proportion_contribute, 
   # run simulations for current value of p
   curr_p <- run_n_sims(n_simulations, n_species = 50, environment_vals, p_contribute_linear_ranges, response_shape = 'linear', p_contribute = p)
   
-  # calc resilience
-  resilience <- curr_p %>%
-    group_by(sim_number, E) %>%
-    summarize(total_function = sum(funct)) %>%
-    group_by(sim_number) %>%
-    summarize(resilience = 1/var(total_function))
+  resilience <- resilience(curr_p)
   
   # get rd, mean slope, sd slope
   mean_weighted_response_diversity <- weighted_rd(curr_p, "linear")
