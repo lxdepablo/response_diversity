@@ -11,7 +11,7 @@ if(require(tidyverse)){
   }
 }
 
-num_cores <- 64
+num_cores <- 16
 
 # generate random abundance functions
 # inputs:
