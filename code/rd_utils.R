@@ -552,11 +552,17 @@ resilience_function_u_rd_plot <- function(df){
 }
 
 p_contribute_plot <- function(df){
-  ggplot(data = df, aes(x = proportion_contribute, y = estimate, col = p_val)) +
-    geom_point(size = 5) +
-    geom_errorbar(aes(ymin = conf_lower, ymax = conf_upper), linewidth = 2) +
-    scale_color_viridis_c() +
+  
+  # ensure consistent ordering of levels
+  df$p_val_bin <- factor(
+    df$p_val_bin,
+    levels = c("Significant", "Marginally significant", "Not significant")
+  )
+  
+  ggplot(data = df, aes(x = proportion_contribute, y = estimate)) +
     geom_smooth(method = "lm") +
+    geom_errorbar(aes(ymin = conf_lower, ymax = conf_upper), linewidth = 1) +
+    geom_point(size = 5) +
     labs(x = "Proportion Species Contributing to Function", y = "Estimate", col="P-Value") +
     theme_bw() +
     theme(axis.text = element_text(size = 20),
@@ -574,17 +580,17 @@ get_p_contribute_stats <- function(df, form){
     
     # build model
     if(form == "linear"){
-      curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = curr_p_data)
+      curr_model <- lm(log(resilience) ~ w_response_diversity + mean_response + mean_f_slope + sd_f_slope, data = curr_p_data)
     } else if(form == "gaussian"){
-      curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity + a * c + mean_f_slope + sd_f_slope, data = curr_p_data)
+      curr_model <- lm(log(resilience) ~ w_response_diversity + a * c + mean_f_slope + sd_f_slope, data = curr_p_data)
     } else{
       print("Form must be either 'linear' or 'gaussian'.")
       return(NULL)
     }
     
-    #curr_model <- lm(log(resilience) ~ mean_weighted_response_diversity, data = curr_p_data)
+    #curr_model <- lm(log(resilience) ~ w_response_diversity, data = curr_p_data)
     
-    conf_int <- confint(curr_model, 'mean_weighted_response_diversity', level=0.95)
+    conf_int <- confint(curr_model, 'w_response_diversity', level=0.95)
     
     p_val <- summary(curr_model)$coefficients[,4][[2]]
     r_squared <- summary(curr_model)$r.squared
@@ -593,7 +599,13 @@ get_p_contribute_stats <- function(df, form){
                            p_val > 0.10 ~ "Not significant",
                            TRUE ~ "Marginally significant")
     
-    data.frame(proportion_contribute = curr_p, p_val = p_val, p_val_bin = p_val_bin, r_squared = r_squared, estimate = estimate, conf_lower = conf_int[[1]], conf_upper = conf_int[[2]])
+    data.frame(proportion_contribute = curr_p,
+               p_val = p_val,
+               p_val_bin = p_val_bin,
+               r_squared = r_squared,
+               estimate = estimate,
+               conf_lower = conf_int[[1]],
+               conf_upper = conf_int[[2]])
   }))
   return(stats)
 }

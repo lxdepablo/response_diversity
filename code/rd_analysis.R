@@ -153,22 +153,29 @@ crossing_summary <- data.frame(case = c("small_slope", "large_slope", "rand_slop
 pc_l10 <- p_contribute_plot(p_contribute_linear_n10_stats) +
   labs(x = "", y = "")
 pc_l50 <- p_contribute_plot(p_contribute_linear_n50_stats) +
-  labs(x = "", y = "")
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
 pc_g10 <- p_contribute_plot(p_contribute_gaussian_n10_stats) +
-  labs(x = "", y = "")
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
 pc_g50 <- p_contribute_plot(p_contribute_gaussian_n50_stats)
 # extract axis labels
 pc_x <- get_plot_component(pc_g50, "xlab-b")
 pc_y <- get_plot_component(pc_g50, "ylab-l")
+# extract plot legend
+pc_legend <- get_legend(pc_l10)
 pc_g50 <- pc_g50 +
-  labs(x = "", y = "")
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
+pc_l10 <- pc_l10 +
+  theme(legend.position = "none")
 
 plot_grid(
   pc_y,
   plot_grid(
     plot_grid(
       pc_l10, pc_l50, pc_g10, pc_g50, nrow = 2, labels = "auto", label_size = 20),
-    pc_x, ncol = 1, rel_heights = c(0.95,0.05)), ncol = 2, rel_widths = c(0.05,0.95))
+    pc_x, ncol = 1, rel_heights = c(0.95,0.05)), ncol = 3, rel_widths = c(0.05,0.95))
 
 # Fig S?, abundance vs environment ------------
 abundance_environment_plot(linear_small_int_results)
