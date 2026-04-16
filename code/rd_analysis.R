@@ -175,8 +175,7 @@ plot_grid(
   plot_grid(
     plot_grid(
       pc_l10, pc_l50, pc_g10, pc_g50, nrow = 2, labels = "auto", label_size = 20),
-    pc_x, ncol = 1, rel_heights = c(0.95,0.05)),
-  pc_legend, ncol = 3, rel_widths = c(0.05,0.75,0.2))
+    pc_x, ncol = 1, rel_heights = c(0.95,0.05)), ncol = 3, rel_widths = c(0.05,0.95))
 
 # Fig S?, abundance vs environment ------------
 abundance_environment_plot(linear_small_int_results)
