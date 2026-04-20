@@ -263,7 +263,7 @@ weighted_rd <- function(df, response_shape){
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), slope = median(abundance_slope)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance, normwt=TRUE)/mean(abs(slope)),
+      summarize(w_response_diversity = Hmisc::wtd.var(slope, mean_abundance, normwt=TRUE),
                 tolerance = mean(1/abs(slope)),
                 mean_response = mean(abs(slope)))
   } else if(response_shape == 'gaussian'){
@@ -271,7 +271,7 @@ weighted_rd <- function(df, response_shape){
       group_by(sim_number, species_ID) %>%
       summarize(mean_abundance = mean(abundance), a = median(a), b = median(b), c = median(c)) %>%
       group_by(sim_number) %>%
-      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance, normwt=TRUE)/mean(b),
+      summarize(w_response_diversity = Hmisc::wtd.var(b, mean_abundance, normwt=TRUE),
                 tolerance = mean(c/a),
                 a = mean(a),
                 c = mean(c))
@@ -307,7 +307,7 @@ resilience <- function(df){
     group_by(sim_number, E) %>%
     summarize(total_function = sum(funct)) %>%
     group_by(sim_number) %>%
-    summarize(resilience = 1/(var(total_function)/mean(total_function)),
+    summarize(resilience = 1/(var(total_function)),
               total_function = mean(total_function))
 }
 
